@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/jpf4826-status-response.schema.json",
+  "title": "JPF4826 Status Response",
+  "description": "JSON schema for JPF4826 fan controller status command output",
+  "type": "object",
+  "required": [
+    "mode",
+    "eco_mode",
+    "modbus_address",
+    "pwm_frequency",
+    "fan_count",
+    "temperature",
+    "fans"
+  ],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["TEMPERATURE", "MANUAL"],
+      "description": "Operating mode of the controller"
+    },
+    "eco_mode": {
+      "type": "boolean",
+      "description": "ECO mode status (true=minimum speed mode, false=shutdown mode)"
+    },
+    "modbus_address": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 254,
+      "description": "Modbus address of the controller (range: 0x0001 to 0x00FE)"
+    },
+    "pwm_frequency": {
+      "type": "object",
+      "required": ["value", "unit"],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "enum": [500, 1000, 2000, 5000, 10000, 25000],
+          "description": "PWM frequency value in Hz"
+        },
+        "unit": {
+          "type": "string",
+          "const": "Hz",
+          "description": "Unit of frequency (always Hz)"
+        }
+      },
+      "description": "PWM frequency configuration"
+    },
+    "fan_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Number of fans connected (0=fault detection disabled, 1-4=number of fans)"
+    },
+    "temperature": {
+      "type": "object",
+      "required": ["current", "low_threshold", "high_threshold"],
+      "properties": {
+        "current": {
+          "$ref": "#/$defs/temperatureValue",
+          "description": "Current temperature reading from the controller"
+        },
+        "low_threshold": {
+          "$ref": "#/$defs/temperatureValue",
+          "description": "Temperature threshold at which fans start spinning"
+        },
+        "high_threshold": {
+          "$ref": "#/$defs/temperatureValue",
+          "description": "Temperature threshold at which fans reach 100% speed"
+        }
+      },
+      "description": "Temperature readings and thresholds"
+    },
+    "fans": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["index", "status", "rpm"],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4,
+            "description": "Fan number (1-4)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["NORMAL", "FAULT"],
+            "description": "Fan operational status (NORMAL=running correctly, FAULT=fault detected)"
+          },
+          "rpm": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Fan speed in revolutions per minute (0 indicates stopped or fault)"
+          }
+        }
+      },
+      "description": "Array of individual fan status information"
+    }
+  },
+  "$defs": {
+    "temperatureValue": {
+      "type": "object",
+      "required": ["value", "unit"],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Temperature value (range depends on unit)"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["CELSIUS", "FAHRENHEIT"],
+          "description": "Temperature unit"
+        }
+      },
+      "if": {
+        "properties": {
+          "unit": { "const": "CELSIUS" }
+        }
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "minimum": -20,
+            "maximum": 120,
+            "description": "Temperature in Celsius (range: -20 to 120°C)"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "value": {
+            "minimum": -4,
+            "maximum": 248,
+            "description": "Temperature in Fahrenheit (range: -4 to 248°F, equivalent to -20 to 120°C)"
+          }
+        }
+      },
+      "description": "Temperature value with unit-specific range validation"
+    }
+  }
+}
