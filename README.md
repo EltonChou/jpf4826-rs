@@ -36,7 +36,7 @@ Display available commands and usage information.
 #### Output
 
 ```
-Usage: jpf4826ctl [OPTION] ... [SUB_COMMANDS] ...
+Usage: jpf4826ctl [OPTION]... [COMMAND]
 An utility to control JPF4826 through serial port by modbus protocol.
 
 OPTION
@@ -45,7 +45,7 @@ OPTION
   --help          display this help and exit
   --version       output version information and exit
 
-SUB_COMMANDS
+COMMAND
   status          display controller status and exit
   set             set registors with flags
   reset           reset the controller
@@ -80,10 +80,10 @@ jpf4826ctl status
 #### Help Output
 
 ```
-Usage: jpf4826ctl status [OPTIONS]
+Usage: jpf4826ctl status [OPTION]...
 Display current controller status.
 
-OPTIONS
+OPTION
   --json          output in JSON format
   --temp_unit     temperature unit (0=Celsius, 1=Fahrenheit)
   --help          display this help and exit
@@ -193,10 +193,10 @@ jpf4826ctl set \
 #### Help Output
 
 ```
-Usage: jpf4826ctl set [OPTIONS]
+Usage: jpf4826ctl set [OPTION]...
 Set controller registers with specified values.
 
-OPTIONS
+OPTION
   --mode          operating mode (0=Temperature, 1=Manual)
   --modbus_addr   modbus address (1-254)
   --low_temp      start temperature threshold (-20 to 120°C)
