@@ -1,0 +1,7 @@
+[build]
+# Enable test-mock feature by default for development
+# This helps IDEs like rust-analyzer understand test code
+rustflags = []
+
+# Alternative: You can set default features per package
+# But this requires more complex configuration

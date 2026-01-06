@@ -1,0 +1,20 @@
+[workspace]
+members = [
+    "jpf4826_driver",
+    "jpf4826ctl",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Elton Chou <plscd748@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/EltonChou/jpf4826-rs"
+
+[workspace.dependencies]
+# Shared dependencies
+tokio = { version = "1", features = ["rt", "macros"] }
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

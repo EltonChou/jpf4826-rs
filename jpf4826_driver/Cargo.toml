@@ -1,0 +1,24 @@
+[package]
+name = "jpf4826_driver"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Rust driver for JPF4826 4-channel PWM fan controller via Modbus-RTU"
+keywords = ["modbus", "fan-controller", "jpf4826", "rs485", "embedded"]
+categories = ["embedded", "hardware-support"]
+
+[dependencies]
+tokio-modbus = "0.14"
+tokio-serial = "5.4"
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+thiserror = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.13"
+
+[features]
+test-mock = []
