@@ -13,8 +13,7 @@ use tokio_serial::SerialStream;
 /// Modbus-RTU client for JPF4826 controller.
 pub struct ModbusRtuClient {
     context: Context,
-    #[allow(dead_code)]
-    slave_addr: u8,
+    slave_addr: std::cell::Cell<u8>,
 }
 
 impl ModbusRtuClient {
@@ -55,7 +54,7 @@ impl ModbusRtuClient {
 
         Ok(Self {
             context,
-            slave_addr,
+            slave_addr: std::cell::Cell::new(slave_addr),
         })
     }
 
@@ -106,6 +105,14 @@ impl ModbusRtuClient {
     /// Returns the configured slave address.
     #[allow(dead_code)]
     pub fn slave_addr(&self) -> u8 {
-        self.slave_addr
+        self.slave_addr.get()
+    }
+
+    /// Updates the configured slave address.
+    ///
+    /// This method should be called after successfully writing a new address
+    /// to the controller's Modbus address register to keep the client in sync.
+    pub(crate) fn set_slave_addr(&self, addr: u8) {
+        self.slave_addr.set(addr);
     }
 }

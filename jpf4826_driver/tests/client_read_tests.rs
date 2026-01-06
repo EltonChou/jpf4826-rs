@@ -8,7 +8,7 @@ use mock::MockController;
 async fn create_test_client() -> (Jpf4826Client, MockController) {
     let mock = MockController::new();
     let registers = mock.registers.clone();
-    let client = Jpf4826Client::new_mock(registers).await;
+    let client = Jpf4826Client::new_mock(registers, 1).await;
     (client, mock)
 }
 

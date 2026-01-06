@@ -50,6 +50,7 @@ enum ClientBackend {
 #[cfg(any(test, feature = "test-mock"))]
 pub(crate) struct MockBackend {
     pub controller: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u16, u16>>>,
+    slave_addr: std::cell::Cell<u8>,
 }
 
 #[cfg(any(test, feature = "test-mock"))]
@@ -59,6 +60,14 @@ impl MockBackend {
         (start_addr..start_addr + count)
             .map(|addr| registers.get(&addr).copied().unwrap_or(0))
             .collect()
+    }
+
+    fn set_slave_addr(&self, addr: u8) {
+        self.slave_addr.set(addr);
+    }
+
+    pub(crate) fn slave_addr(&self) -> u8 {
+        self.slave_addr.get()
     }
 }
 
@@ -102,10 +111,12 @@ impl Jpf4826Client {
     #[cfg(any(test, feature = "test-mock"))]
     pub async fn new_mock(
         registers: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u16, u16>>>,
+        slave_addr: u8,
     ) -> Self {
         Self {
             backend: ClientBackend::Mock(MockBackend {
                 controller: registers,
+                slave_addr: std::cell::Cell::new(slave_addr),
             }),
         }
     }
@@ -358,6 +369,9 @@ impl Jpf4826Client {
     /// Low-level method for writing raw register values. Most users should
     /// use the high-level methods like `set_mode()` or `reset()` instead.
     ///
+    /// The Modbus protocol validates the write by verifying the controller
+    /// echoes back the same register address and value.
+    ///
     /// # Arguments
     ///
     /// * `register` - Register address to write
@@ -365,7 +379,9 @@ impl Jpf4826Client {
     ///
     /// # Errors
     ///
-    /// Returns error if Modbus communication fails.
+    /// Returns error if:
+    /// - Modbus communication fails
+    /// - Controller response is invalid or does not match the written value
     pub async fn write(&mut self, register: RegisterAddress, value: u16) -> Result<()> {
         match &mut self.backend {
             #[cfg(any(test, feature = "test-mock"))]
@@ -581,7 +597,16 @@ impl Jpf4826Client {
             return Err(Jpf4826Error::invalid_address(addr));
         }
         self.write(RegisterAddress::ModbusAddress, addr as u16)
-            .await
+            .await?;
+
+        // Update the client's internal address to match the controller
+        match &self.backend {
+            #[cfg(any(test, feature = "test-mock"))]
+            ClientBackend::Mock(mock) => mock.set_slave_addr(addr),
+            ClientBackend::RealModbus(modbus) => modbus.set_slave_addr(addr),
+        }
+
+        Ok(())
     }
 
     /// Sets the PWM frequency for fan control.
@@ -665,5 +690,20 @@ impl Jpf4826Client {
             .await?;
 
         Ok(())
+    }
+
+    /// Returns the current slave address (test-only helper).
+    ///
+    /// This method is only available when testing and allows verification
+    /// that the client's internal address is properly synchronized after
+    /// calling `set_addr()`.
+    #[doc(hidden)]
+    #[cfg(any(test, feature = "test-mock"))]
+    pub fn slave_addr(&self) -> u8 {
+        match &self.backend {
+            #[cfg(any(test, feature = "test-mock"))]
+            ClientBackend::Mock(mock) => mock.slave_addr(),
+            ClientBackend::RealModbus(modbus) => modbus.slave_addr(),
+        }
     }
 }

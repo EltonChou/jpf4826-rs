@@ -7,7 +7,7 @@ use mock::MockController;
 async fn create_test_client() -> (Jpf4826Client, MockController) {
     let mock = MockController::new();
     let registers = mock.registers.clone();
-    let client = Jpf4826Client::new_mock(registers).await;
+    let client = Jpf4826Client::new_mock(registers, 1).await;
     (client, mock)
 }
 
@@ -177,6 +177,44 @@ async fn test_set_addr_invalid_255() {
     // Address 255 is invalid (max is 254)
     let result = client.set_addr(255).await;
     assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_set_addr_updates_client_internal_address() {
+    let (mut client, mock) = create_test_client().await;
+
+    // Verify initial address
+    assert_eq!(client.slave_addr(), 1, "Initial client address should be 1");
+
+    // Change address to 42
+    client.set_addr(42).await.unwrap();
+
+    // Verify the controller's register was updated
+    let register_value = mock.read_register(0x0002).unwrap();
+    assert_eq!(
+        register_value, 42,
+        "Controller register should contain new address"
+    );
+
+    // Verify the client's internal address was synchronized
+    assert_eq!(
+        client.slave_addr(),
+        42,
+        "Client internal address should be updated to match controller"
+    );
+
+    // Change address again to verify it works multiple times
+    client.set_addr(100).await.unwrap();
+    assert_eq!(
+        client.slave_addr(),
+        100,
+        "Client address should update correctly on subsequent calls"
+    );
+    assert_eq!(
+        mock.read_register(0x0002).unwrap(),
+        100,
+        "Controller register should reflect second address change"
+    );
 }
 
 #[tokio::test]
