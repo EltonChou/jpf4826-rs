@@ -47,9 +47,10 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
         println!("✓ Modbus address set to {}", addr);
     }
 
-    // Set temperature thresholds (must be done together)
+    // Set temperature thresholds (can be set individually or together)
     match (args.low_temp, args.high_temp) {
         (Some(low), Some(high)) => {
+            // Set both thresholds at once
             client.set_temperature_threshold(low, high).await?;
             operations_count += 1;
             println!(
@@ -57,11 +58,17 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
                 low, high
             );
         }
-        (Some(_), None) => {
-            anyhow::bail!("--low_temp requires --high_temp to be set as well");
+        (Some(low), None) => {
+            // Set only low threshold
+            client.set_start_temperature(low).await?;
+            operations_count += 1;
+            println!("✓ Start temperature set to {}°C", low);
         }
-        (None, Some(_)) => {
-            anyhow::bail!("--high_temp requires --low_temp to be set as well");
+        (None, Some(high)) => {
+            // Set only high threshold
+            client.set_full_speed_temperature(high).await?;
+            operations_count += 1;
+            println!("✓ Full speed temperature set to {}°C", high);
         }
         (None, None) => {}
     }

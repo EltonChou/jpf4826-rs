@@ -692,6 +692,114 @@ impl Jpf4826Client {
         Ok(())
     }
 
+    /// Sets only the start (low) temperature threshold.
+    ///
+    /// The new low temperature must be less than the current high temperature.
+    /// This method reads the current high threshold to validate the constraint.
+    ///
+    /// # Arguments
+    ///
+    /// * `low` - Start temperature in Celsius (-20 to 120)
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use jpf4826_driver::Jpf4826Client;
+    /// # #[tokio::main]
+    /// # async fn main() -> jpf4826_driver::Result<()> {
+    /// # let mut client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
+    /// // Set only the start temperature to 25°C
+    /// client.set_start_temperature(25).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns error if:
+    /// - Temperature is out of range (-20 to 120°C)
+    /// - New low temperature is not less than current high temperature
+    /// - Modbus communication fails
+    pub async fn set_start_temperature(&mut self, low: i16) -> Result<()> {
+        // Validate range
+        if !(-20..=120).contains(&low) {
+            return Err(Jpf4826Error::invalid_parameter(format!(
+                "Start temperature {}°C out of range (-20 to 120)",
+                low
+            )));
+        }
+
+        // Read current high threshold to validate constraint
+        let values = self.read(RegisterAddress::FullSpeedTemperature, 1).await?;
+        let current_high = register_to_celsius(values[0]);
+
+        // Validate constraint
+        if low >= current_high {
+            return Err(Jpf4826Error::invalid_thresholds(low, current_high));
+        }
+
+        // Write low temperature register
+        let low_value = celsius_to_register(low);
+        self.write(RegisterAddress::StartTemperature, low_value)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Sets only the full speed (high) temperature threshold.
+    ///
+    /// The new high temperature must be greater than the current low temperature.
+    /// This method reads the current low threshold to validate the constraint.
+    ///
+    /// # Arguments
+    ///
+    /// * `high` - Full speed temperature in Celsius (-20 to 120)
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use jpf4826_driver::Jpf4826Client;
+    /// # #[tokio::main]
+    /// # async fn main() -> jpf4826_driver::Result<()> {
+    /// # let mut client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
+    /// // Set only the full speed temperature to 45°C
+    /// client.set_full_speed_temperature(45).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns error if:
+    /// - Temperature is out of range (-20 to 120°C)
+    /// - New high temperature is not greater than current low temperature
+    /// - Modbus communication fails
+    pub async fn set_full_speed_temperature(&mut self, high: i16) -> Result<()> {
+        // Validate range
+        if !(-20..=120).contains(&high) {
+            return Err(Jpf4826Error::invalid_parameter(format!(
+                "Full speed temperature {}°C out of range (-20 to 120)",
+                high
+            )));
+        }
+
+        // Read current low threshold to validate constraint
+        let values = self.read(RegisterAddress::StartTemperature, 1).await?;
+        let current_low = register_to_celsius(values[0]);
+
+        // Validate constraint
+        if high <= current_low {
+            return Err(Jpf4826Error::invalid_thresholds(current_low, high));
+        }
+
+        // Write high temperature register
+        let high_value = celsius_to_register(high);
+        self.write(RegisterAddress::FullSpeedTemperature, high_value)
+            .await?;
+
+        Ok(())
+    }
+
     /// Returns the current slave address (test-only helper).
     ///
     /// This method is only available when testing and allows verification

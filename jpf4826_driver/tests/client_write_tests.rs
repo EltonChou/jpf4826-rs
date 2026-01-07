@@ -276,3 +276,103 @@ async fn test_set_temperature_threshold_out_of_range() {
     let result2 = client.set_temperature_threshold(20, 125).await;
     assert!(result2.is_err());
 }
+
+#[tokio::test]
+async fn test_set_start_temperature_valid() {
+    let (mut client, mock) = create_test_client().await;
+
+    // Set initial thresholds: low=30, high=50
+    client.set_temperature_threshold(30, 50).await.unwrap();
+
+    // Now set only the start temperature to 25°C
+    client.set_start_temperature(25).await.unwrap();
+
+    // Verify start temp was updated (register 0x000C)
+    let start = mock.read_register(0x000C).unwrap();
+    assert_eq!(start, 65); // 25 + 40
+
+    // Verify high temp remains unchanged (register 0x000D)
+    let full = mock.read_register(0x000D).unwrap();
+    assert_eq!(full, 90); // 50 + 40
+}
+
+#[tokio::test]
+async fn test_set_start_temperature_invalid_greater_than_high() {
+    let (mut client, _mock) = create_test_client().await;
+
+    // Set initial thresholds: low=30, high=50
+    client.set_temperature_threshold(30, 50).await.unwrap();
+
+    // Try to set start temp >= current high temp (should fail)
+    let result = client.set_start_temperature(50).await;
+    assert!(result.is_err());
+
+    let result2 = client.set_start_temperature(55).await;
+    assert!(result2.is_err());
+}
+
+#[tokio::test]
+async fn test_set_start_temperature_out_of_range() {
+    let (mut client, _mock) = create_test_client().await;
+
+    // Set initial thresholds
+    client.set_temperature_threshold(30, 50).await.unwrap();
+
+    // -25°C is below minimum (-20°C)
+    let result = client.set_start_temperature(-25).await;
+    assert!(result.is_err());
+
+    // 125°C is above maximum (120°C)
+    let result2 = client.set_start_temperature(125).await;
+    assert!(result2.is_err());
+}
+
+#[tokio::test]
+async fn test_set_full_speed_temperature_valid() {
+    let (mut client, mock) = create_test_client().await;
+
+    // Set initial thresholds: low=30, high=50
+    client.set_temperature_threshold(30, 50).await.unwrap();
+
+    // Now set only the full speed temperature to 60°C
+    client.set_full_speed_temperature(60).await.unwrap();
+
+    // Verify start temp remains unchanged (register 0x000C)
+    let start = mock.read_register(0x000C).unwrap();
+    assert_eq!(start, 70); // 30 + 40
+
+    // Verify high temp was updated (register 0x000D)
+    let full = mock.read_register(0x000D).unwrap();
+    assert_eq!(full, 100); // 60 + 40
+}
+
+#[tokio::test]
+async fn test_set_full_speed_temperature_invalid_less_than_low() {
+    let (mut client, _mock) = create_test_client().await;
+
+    // Set initial thresholds: low=30, high=50
+    client.set_temperature_threshold(30, 50).await.unwrap();
+
+    // Try to set high temp <= current low temp (should fail)
+    let result = client.set_full_speed_temperature(30).await;
+    assert!(result.is_err());
+
+    let result2 = client.set_full_speed_temperature(25).await;
+    assert!(result2.is_err());
+}
+
+#[tokio::test]
+async fn test_set_full_speed_temperature_out_of_range() {
+    let (mut client, _mock) = create_test_client().await;
+
+    // Set initial thresholds
+    client.set_temperature_threshold(30, 50).await.unwrap();
+
+    // -25°C is below minimum (-20°C)
+    let result = client.set_full_speed_temperature(-25).await;
+    assert!(result.is_err());
+
+    // 125°C is above maximum (120°C)
+    let result2 = client.set_full_speed_temperature(125).await;
+    assert!(result2.is_err());
+}
