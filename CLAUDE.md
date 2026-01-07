@@ -35,6 +35,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `set_temperature_threshold`: Change start/full temperature by given range.
   - `read`: A general read method which is invoked by other methods or by user directly.
   - `write`: A general write method which is invoked by other methods or by user directly.
+- If there are more useful basic methods could be added, plan it and ask me.
 
 ### Command line tool
 
