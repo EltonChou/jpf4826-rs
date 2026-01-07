@@ -8,6 +8,7 @@ repository.workspace = true
 description = "Rust driver for JPF4826 4-channel PWM fan controller via Modbus-RTU"
 keywords = ["modbus", "fan-controller", "jpf4826", "rs485", "embedded"]
 categories = ["embedded", "hardware-support"]
+readme = "README.md"
 
 [dependencies]
 tokio-modbus = "0.14"

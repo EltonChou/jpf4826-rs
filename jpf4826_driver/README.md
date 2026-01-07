@@ -1,7 +1,7 @@
 # jpf4826_driver
 
-[![Crates.io](https://img.shields.io/crates/v/jpf4826-driver.svg)](https://crates.io/crates/jpf4826-driver)
-[![Documentation](https://docs.rs/jpf4826-driver/badge.svg)](https://docs.rs/jpf4826-driver)
+[![Crates.io](https://img.shields.io/crates/v/jpf4826_driver.svg)](https://crates.io/crates/jpf4826_driver)
+[![Documentation](https://docs.rs/jpf4826_driver/badge.svg)](https://docs.rs/jpf4826_driver)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](../LICENSE)
 
 Rust driver library for JPF4826 4-channel PWM fan controller via Modbus-RTU protocol over RS485.
@@ -390,4 +390,4 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 
 ## Support
 
-For issues and feature requests, please use the [GitHub issue tracker](https://github.com/yourusername/jpf4826-rs/issues).
+For issues and feature requests, please use the [GitHub issue tracker](https://github.com/EltonChou/jpf4826-rs/issues).

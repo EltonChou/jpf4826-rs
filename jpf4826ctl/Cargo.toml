@@ -6,6 +6,9 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "CLI tool for JPF4826 fan controller"
+keywords = ["cli", "fan-controller", "jpf4826", "modbus"]
+categories = ["command-line-utilities"]
+readme = "README.md"
 
 [[bin]]
 name = "jpf4826ctl"
