@@ -113,7 +113,8 @@ impl Cli {
 
     /// Validates and retrieves the Modbus address, either from args or environment
     pub fn get_addr(&self) -> Result<u8, String> {
-        self.addr
-            .ok_or_else(|| "Modbus address not specified. Use --addr or set JPF4826_ADDR".to_string())
+        self.addr.ok_or_else(|| {
+            "Modbus address not specified. Use --addr or set JPF4826_ADDR".to_string()
+        })
     }
 }

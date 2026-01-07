@@ -52,7 +52,10 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
         (Some(low), Some(high)) => {
             client.set_temperature_threshold(low, high).await?;
             operations_count += 1;
-            println!("✓ Temperature thresholds set: {}°C (low) to {}°C (high)", low, high);
+            println!(
+                "✓ Temperature thresholds set: {}°C (low) to {}°C (high)",
+                low, high
+            );
         }
         (Some(_), None) => {
             anyhow::bail!("--low_temp requires --high_temp to be set as well");
@@ -108,7 +111,10 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
     if operations_count == 0 {
         println!("No options specified. Use --help to see available options.");
     } else {
-        println!("\n{} operation(s) completed successfully.", operations_count);
+        println!(
+            "\n{} operation(s) completed successfully.",
+            operations_count
+        );
     }
 
     Ok(())
