@@ -1,0 +1,163 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    name: Run CI Tests
+    uses: ./.github/workflows/ci.yml
+    with:
+      upload_artifacts: true
+      artifact_name: jpf4826ctl-${{ github.ref_name }}
+
+  publish-driver:
+    name: Publish jpf4826_driver to crates.io
+    needs: ci
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Get package version
+        id: get_version
+        run: |
+          VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "jpf4826_driver") | .version')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing jpf4826_driver v$VERSION"
+
+      - name: Publish jpf4826_driver
+        run: cargo publish --package jpf4826_driver
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  publish-cli:
+    name: Publish jpf4826ctl to crates.io
+    needs: publish-driver
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Wait for jpf4826_driver on crates.io
+        run: |
+          PACKAGE="jpf4826_driver"
+          VERSION="${{ needs.publish-driver.outputs.version }}"
+          MAX_ATTEMPTS=30
+          SLEEP_SECONDS=10
+
+          echo "Waiting for $PACKAGE v$VERSION to be available on crates.io..."
+
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            echo "Attempt $i/$MAX_ATTEMPTS: Checking availability..."
+
+            RESPONSE=$(curl -sf "https://crates.io/api/v1/crates/$PACKAGE" || echo "{}")
+
+            if echo "$RESPONSE" | jq -e ".versions[] | select(.num == \"$VERSION\")" > /dev/null 2>&1; then
+              echo "✓ $PACKAGE v$VERSION is now available on crates.io"
+              exit 0
+            fi
+
+            if [ $i -lt $MAX_ATTEMPTS ]; then
+              echo "Version not found yet, waiting ${SLEEP_SECONDS}s..."
+              sleep $SLEEP_SECONDS
+            fi
+          done
+
+          echo "✗ Timeout: $PACKAGE v$VERSION not available after $((MAX_ATTEMPTS * SLEEP_SECONDS)) seconds"
+          exit 1
+
+      - name: Publish jpf4826ctl
+        run: cargo publish --package jpf4826ctl
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  github-release:
+    name: Create GitHub Release
+    needs: [ci, publish-driver, publish-cli]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Generate release changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
+
+      - name: Download artifacts
+        if: needs.ci.outputs.artifacts_uploaded == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ needs.ci.outputs.artifact_prefix }}-*
+          path: artifacts-tmp
+          merge-multiple: false
+
+      - name: Prepare release artifacts
+        if: needs.ci.outputs.artifacts_uploaded == 'true'
+        run: |
+          mkdir -p artifacts
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Process each platform's artifact
+          for dir in artifacts-tmp/*/; do
+            platform=$(basename "$dir" | sed "s/${{ needs.ci.outputs.artifact_prefix }}-//")
+
+            # Determine archive format and binary extension
+            if [[ "$platform" == "windows-latest" ]]; then
+              archive_ext="zip"
+              binary_ext=".exe"
+            else
+              archive_ext="tar.gz"
+              binary_ext=""
+            fi
+
+            # Create temporary directory for archive contents
+            temp_dir="temp-${platform}"
+            mkdir -p "$temp_dir"
+
+            # Copy binary and README
+            cp "$dir"jpf4826ctl${binary_ext} "$temp_dir/"
+            cp jpf4826ctl/README.md "$temp_dir/"
+
+            # Create archive with version in filename
+            archive_name="jpf4826ctl-${VERSION}-${platform}.${archive_ext}"
+
+            if [[ "$archive_ext" == "zip" ]]; then
+              (cd "$temp_dir" && zip -r "../artifacts/${archive_name}" .)
+            else
+              tar -czf "artifacts/${archive_name}" -C "$temp_dir" .
+            fi
+
+            # Cleanup
+            rm -rf "$temp_dir"
+          done
+
+          ls -lh artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release v${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          files: artifacts/**/*

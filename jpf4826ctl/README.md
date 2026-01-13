@@ -36,19 +36,21 @@ Display available commands and usage information.
 #### Output
 
 ```
-Usage: jpf4826ctl [OPTION]... [COMMAND]
-An utility to control JPF4826 through serial port by modbus protocol.
+Control JPF4826 fan controller via Modbus-RTU
 
-OPTION
-  -p, --port=PORT      serial port (falls back to JPF4826_PORT env var)
-  -a, --addr=ADDR      modbus address (falls back to JPF4826_ADDR env var)
-  --help          display this help and exit
-  --version       output version information and exit
+Usage: jpf4826ctl.exe [OPTIONS] <COMMAND>
 
-COMMAND
-  status          display controller status and exit
-  set             set registors with flags
-  reset           reset the controller
+Commands:
+  status  Display controller status
+  set     Set controller registers
+  reset   Reset the controller
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -p, --port <PORT>  Serial port (falls back to JPF4826_PORT env var) [env: JPF4826_PORT=]
+  -a, --addr <ADDR>  Modbus address (falls back to JPF4826_ADDR env var) [env: JPF4826_ADDR=]
+  -h, --help         Print help
+  -V, --version      Print version
 ```
 
 ### `--version`
@@ -71,7 +73,7 @@ jpf4826ctl status
 
 - `--json`: Output as JSON
 
-- `--temp_unit`: Temperature unit
+- `--temp-unit`: Temperature unit
   - `0`: Celsius
   - `1`: Fahrenheit
 
@@ -80,13 +82,14 @@ jpf4826ctl status
 #### Help Output
 
 ```
-Usage: jpf4826ctl status [OPTION]...
-Display current controller status.
+Display controller status
 
-OPTION
-  --json          output in JSON format
-  --temp_unit     temperature unit (0=Celsius, 1=Fahrenheit)
-  --help          display this help and exit
+Usage: jpf4826ctl.exe status [OPTIONS]
+
+Options:
+      --json                   Output in JSON format
+      --temp-unit <TEMP_UNIT>  Temperature unit (0=Celsius, 1=Fahrenheit)
+  -h, --help                   Print help
 ```
 
 #### Output
@@ -178,12 +181,12 @@ Set registers of controller by arguments
 ```bash
 jpf4826ctl set \
   --mode=0 \
-  --modbus_addr=5 \
-  --low_temp=25 \
-  --high_temp=38 \
+  --modbus-addr=5 \
+  --low-temp=25 \
+  --high-temp=38 \
   --eco=1 \
-  --fan_qty=3 \
-  --pwm_freq=5000
+  --fan-qty=3 \
+  --pwm-freq=5000
 ```
 
 #### Options
@@ -193,41 +196,42 @@ jpf4826ctl set \
 #### Help Output
 
 ```
-Usage: jpf4826ctl set [OPTION]...
-Set controller registers with specified values.
+Set controller registers
 
-OPTION
-  --mode          operating mode (0=Temperature, 1=Manual)
-  --modbus_addr   modbus address (1-254)
-  --low_temp      start temperature threshold (-20 to 120°C)
-  --high_temp     full speed temperature threshold (-20 to 120°C)
-  --eco           ECO/work mode (0=Shutdown, 1=Minimum speed)
-  --fan_qty       number of fans (1-4, 0=disable fault detection)
-  --pwm_freq      PWM frequency (500, 1000, 2000, 5000, 10000, 25000 Hz)
-  --manual_speed  manual speed percentage (0-100, only for manual mode)
-  --help          display this help and exit
+Usage: jpf4826ctl.exe set [OPTIONS]
+
+Options:
+      --mode <MODE>                  Operating mode (0=Temperature, 1=Manual)
+      --modbus-addr <MODBUS_ADDR>    Modbus address (1-254)
+      --low-temp <LOW_TEMP>          Start temperature threshold (-20 to 120°C)
+      --high-temp <HIGH_TEMP>        Full speed temperature threshold (-20 to 120°C)
+      --eco <ECO>                    ECO/work mode (0=Shutdown, 1=Minimum speed)
+      --fan-qty <FAN_QTY>            Number of fans (1-4, 0=disable fault detection)
+      --pwm-freq <PWM_FREQ>          PWM frequency (500, 1000, 2000, 5000, 10000, 25000 Hz)
+      --manual-speed <MANUAL_SPEED>  Manual speed percentage (0-100, only for manual mode)
+  -h, --help                         Print help
 ```
 
 #### Option Details
 
 - `--mode`: Operating mode
   - `0`: Temperature mode (automatic speed control based on temperature)
-  - `1`: Manual mode (requires `--manual_speed` to set fixed speed percentage)
+  - `1`: Manual mode (requires `--manual-speed` to set fixed speed percentage)
   - Maps to register 0x0003 (write 0xFFFF for temperature mode, or 0-100 for manual mode)
 
-- `--modbus_addr`: Modbus address of the controller
+- `--modbus-addr`: Modbus address of the controller
   - Range: `1-254`
   - Maps to register `0x0002`
 
-- `--low_temp`: Start temperature threshold (°C)
+- `--low-temp`: Start temperature threshold (°C)
   - Range: `-20` to `120`
   - Fan starts spinning at this temperature
   - Maps to register `0x000C` (stored with +40 offset)
 
-- `--high_temp`: Full speed temperature threshold (°C)
+- `--high-temp`: Full speed temperature threshold (°C)
   - Range: `-20` to `120`
   - Fan reaches 100% speed at this temperature
-  - Must be greater than `--low_temp`
+  - Must be greater than `--low-temp`
   - Maps to register `0x000D` (stored with +40 offset)
 
 - `--eco`: ECO mode / Work mode
@@ -235,17 +239,17 @@ OPTION
   - `1`: Minimum speed mode (fan maintains 20% speed below low_temp - 3°C)
   - Maps to register `0x0005`
 
-- `--fan_qty`: Number of fans connected
+- `--fan-qty`: Number of fans connected
   - Range: `1-4`
   - Set to `0` to disable fault detection
   - Maps to register `0x0006`
 
-- `--pwm_freq`: PWM frequency in Hz
+- `--pwm-freq`: PWM frequency in Hz
   - Valid values: `500`, `1000`, `2000`, `5000`, `10000`, `25000`
   - Default: `25000` Hz
   - Maps to register `0x000B`
 
-- `--manual_speed`: Manual speed percentage (only valid when `--mode=1`)
+- `--manual-speed`: Manual speed percentage (only valid when `--mode=1`)
   - Range: `0-100`
   - Disables temperature-based control
   - Maps to register `0x0003`
