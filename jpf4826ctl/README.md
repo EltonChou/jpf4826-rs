@@ -38,7 +38,7 @@ Display available commands and usage information.
 ```
 Control JPF4826 fan controller via Modbus-RTU
 
-Usage: jpf4826ctl.exe [OPTIONS] <COMMAND>
+Usage: jpf4826ctl [OPTIONS] <COMMAND>
 
 Commands:
   status  Display controller status
@@ -84,7 +84,7 @@ jpf4826ctl status
 ```
 Display controller status
 
-Usage: jpf4826ctl.exe status [OPTIONS]
+Usage: jpf4826ctl status [OPTIONS]
 
 Options:
       --json                   Output in JSON format
@@ -198,7 +198,7 @@ jpf4826ctl set \
 ```
 Set controller registers
 
-Usage: jpf4826ctl.exe set [OPTIONS]
+Usage: jpf4826ctl set [OPTIONS]
 
 Options:
       --mode <MODE>                  Operating mode (0=Temperature, 1=Manual)
