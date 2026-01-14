@@ -360,10 +360,24 @@ impl Jpf4826Client {
         let pwm_frequency =
             PwmFrequency::from_register_value(pwm_freq_raw).unwrap_or(PwmFrequency::Hz25000);
 
-        log::debug!("Reading fan status for {} fans...", fan_count);
-        // Get fan status
-        let fans = self.fan_status().await?;
-        log::debug!("Fan status retrieved successfully");
+        // Parse fan data from already-read registers to avoid redundant reads
+        // values[1] = fan status bitmap (not used currently)
+        // values[7-10] = fan speeds (0x0007-0x000A)
+        // values[14] = fault bitmap (0x000E)
+        log::debug!("Parsing fan status from bulk read data");
+        let fault_bitmap = values[14];
+        log::debug!("Fault bitmap: {:#06X}", fault_bitmap);
+        let fault_statuses = parse_fan_fault_bitmap(fault_bitmap);
+
+        let mut fans = Vec::with_capacity(4);
+        for i in 0..4 {
+            fans.push(FanInfo {
+                index: (i + 1) as u8,
+                status: fault_statuses[i],
+                rpm: values[7 + i],
+            });
+        }
+        log::debug!("Fan status parsed successfully from bulk read");
 
         Ok(ControllerStatus {
             mode,
