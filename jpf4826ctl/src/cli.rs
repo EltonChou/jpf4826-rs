@@ -32,6 +32,10 @@ pub struct Cli {
     )]
     pub addr: Option<u8>,
 
+    /// Enable verbose logging (debug output)
+    #[arg(short = 'v', long = "verbose", global = true)]
+    pub verbose: bool,
+
     /// Command to execute
     #[command(subcommand)]
     pub command: Commands,

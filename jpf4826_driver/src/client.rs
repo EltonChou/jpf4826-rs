@@ -267,11 +267,21 @@ impl Jpf4826Client {
     ///
     /// Returns error if Modbus communication fails.
     pub async fn fan_status(&mut self) -> Result<Vec<FanInfo>> {
+        log::debug!("Reading fan status and speeds");
+
         // Read: fan status bitmap (0x0001), fan speeds (0x0007-0x000A), fault bitmap (0x000E)
         // We need separate reads since registers aren't consecutive
+        log::debug!("Reading fan status bitmap from register 0x0001");
         let _status_bitmap = self.read(RegisterAddress::FanStatus, 1).await?[0];
+        log::debug!("Status bitmap: {:#06X}", _status_bitmap);
+
+        log::debug!("Reading fan speeds from registers 0x0007-0x000A");
         let speeds = self.read(RegisterAddress::Fan1Speed, 4).await?;
+        log::debug!("Fan speeds: {:?} RPM", speeds);
+
+        log::debug!("Reading fault bitmap from register 0x000E");
         let fault_bitmap = self.read(RegisterAddress::FanFaultCode, 1).await?[0];
+        log::debug!("Fault bitmap: {:#06X}", fault_bitmap);
 
         let fault_statuses = parse_fan_fault_bitmap(fault_bitmap);
 
@@ -284,6 +294,7 @@ impl Jpf4826Client {
             });
         }
 
+        log::debug!("Assembled {} fan info entries", fans.len());
         Ok(fans)
     }
 
@@ -311,8 +322,12 @@ impl Jpf4826Client {
     ///
     /// Returns error if Modbus communication fails.
     pub async fn status(&mut self) -> Result<ControllerStatus> {
+        log::debug!("Reading controller status (15 registers starting from 0x0000)");
+
         // Read all status registers at once (0x0000-0x000E = 15 registers)
         let values = self.read(RegisterAddress::CurrentTemperature, 15).await?;
+        log::debug!("Received {} register values", values.len());
+        log::debug!("Raw register values: {:04X?}", values);
 
         let current_temp = register_to_celsius(values[0]);
         let modbus_address = values[2] as u8;
@@ -322,6 +337,14 @@ impl Jpf4826Client {
         let pwm_freq_raw = values[11];
         let start_temp = register_to_celsius(values[12]);
         let full_temp = register_to_celsius(values[13]);
+
+        log::debug!(
+            "Parsed values: temp={}, addr={}, mode_raw={:#06X}, fans={}",
+            current_temp,
+            modbus_address,
+            manual_speed_raw,
+            fan_count
+        );
 
         // Determine operating mode
         let mode = if manual_speed_raw == 0xFFFF {
@@ -337,8 +360,10 @@ impl Jpf4826Client {
         let pwm_frequency =
             PwmFrequency::from_register_value(pwm_freq_raw).unwrap_or(PwmFrequency::Hz25000);
 
+        log::debug!("Reading fan status for {} fans...", fan_count);
         // Get fan status
         let fans = self.fan_status().await?;
+        log::debug!("Fan status retrieved successfully");
 
         Ok(ControllerStatus {
             mode,

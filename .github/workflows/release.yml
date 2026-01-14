@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,6 +20,7 @@ jobs:
     name: Publish jpf4826_driver to crates.io
     needs: ci
     runs-on: ubuntu-latest
+    environment: release
     outputs:
       version: ${{ steps.get_version.outputs.version }}
     steps:
@@ -44,6 +45,7 @@ jobs:
     name: Publish jpf4826ctl to crates.io
     needs: publish-driver
     runs-on: ubuntu-latest
+    environment: release
     steps:
       - uses: actions/checkout@v4
 

@@ -27,16 +27,34 @@ async fn run() -> anyhow::Result<()> {
     // Parse command-line arguments
     let cli = Cli::parse();
 
+    // Initialize logger based on verbose flag
+    let log_level = if cli.verbose {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Warn
+    };
+    env_logger::Builder::new()
+        .filter_level(log_level)
+        .format_timestamp_micros()
+        .init();
+
+    log::debug!("CLI arguments: {:?}", cli);
+
     // Validate required global options
     let port = cli.get_port().map_err(|e| anyhow::anyhow!(e))?;
     let addr = cli.get_addr().map_err(|e| anyhow::anyhow!(e))?;
+
+    log::debug!("Connecting to port: {}, address: {}", port, addr);
 
     // Create client connection
     let mut client = Jpf4826Client::new(&port, addr)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to connect to controller: {}", e))?;
 
+    log::debug!("Successfully connected to controller");
+
     // Execute command
+    log::debug!("Executing command: {:?}", cli.command);
     match cli.command {
         Commands::Status { json, temp_unit } => {
             commands::status::execute(&mut client, json, temp_unit).await?;

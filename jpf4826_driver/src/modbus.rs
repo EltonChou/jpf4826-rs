@@ -37,7 +37,14 @@ impl ModbusRtuClient {
     /// - Serial port cannot be opened
     /// - Port configuration fails
     pub async fn new(port: &str, slave_addr: u8) -> Result<Self> {
+        log::debug!(
+            "Initializing Modbus-RTU client: port={}, slave_addr={}",
+            port,
+            slave_addr
+        );
+
         // Configure serial port according to JPF4826 specification
+        log::debug!("Configuring serial port: 9600 8N1, no flow control");
         let builder = tokio_serial::new(port, 9600)
             .data_bits(tokio_serial::DataBits::Eight)
             .parity(tokio_serial::Parity::None)
@@ -45,13 +52,18 @@ impl ModbusRtuClient {
             .flow_control(tokio_serial::FlowControl::None);
 
         // Open serial port
+        log::debug!("Opening serial port: {}", port);
         let serial = SerialStream::open(&builder).map_err(|e| {
+            log::error!("Failed to open serial port {}: {}", port, e);
             Jpf4826Error::serial(format!("Failed to open serial port {}: {}", port, e))
         })?;
+        log::debug!("Serial port opened successfully");
 
         // Create Modbus-RTU context
+        log::debug!("Attaching Modbus-RTU context to slave {}", slave_addr);
         let context = rtu::attach_slave(serial, Slave(slave_addr));
 
+        log::debug!("Modbus-RTU client initialized successfully");
         Ok(Self {
             context,
             slave_addr: std::cell::Cell::new(slave_addr),
@@ -69,15 +81,27 @@ impl ModbusRtuClient {
     ///
     /// Returns error if Modbus communication fails.
     pub async fn read_holding_registers(&mut self, addr: u16, count: u16) -> Result<Vec<u16>> {
-        self.context
+        log::debug!("Modbus READ: addr=0x{:04X}, count={}", addr, count);
+
+        let result = self
+            .context
             .read_holding_registers(addr, count)
             .await
             .map_err(|e| {
+                log::error!("Modbus READ failed at 0x{:04X}: {}", addr, e);
                 Jpf4826Error::modbus(format!("Failed to read registers at 0x{:04X}: {}", addr, e))
             })?
             .map_err(|e| {
+                log::error!("Modbus exception at 0x{:04X}: {:?}", addr, e);
                 Jpf4826Error::modbus(format!("Modbus exception at 0x{:04X}: {:?}", addr, e))
-            })
+            })?;
+
+        log::debug!(
+            "Modbus READ success: addr=0x{:04X}, values={:04X?}",
+            addr,
+            result
+        );
+        Ok(result)
     }
 
     /// Writes a single holding register to the controller.
@@ -91,15 +115,22 @@ impl ModbusRtuClient {
     ///
     /// Returns error if Modbus communication fails.
     pub async fn write_single_register(&mut self, addr: u16, value: u16) -> Result<()> {
+        log::debug!("Modbus WRITE: addr=0x{:04X}, value=0x{:04X}", addr, value);
+
         self.context
             .write_single_register(addr, value)
             .await
             .map_err(|e| {
+                log::error!("Modbus WRITE failed at 0x{:04X}: {}", addr, e);
                 Jpf4826Error::modbus(format!("Failed to write register 0x{:04X}: {}", addr, e))
             })?
             .map_err(|e| {
+                log::error!("Modbus exception at 0x{:04X}: {:?}", addr, e);
                 Jpf4826Error::modbus(format!("Modbus exception at 0x{:04X}: {:?}", addr, e))
-            })
+            })?;
+
+        log::debug!("Modbus WRITE success: addr=0x{:04X}", addr);
+        Ok(())
     }
 
     /// Returns the configured slave address.

@@ -19,15 +19,32 @@ pub async fn execute(
     json: bool,
     temp_unit: Option<u8>,
 ) -> anyhow::Result<()> {
+    log::debug!("Starting status command execution");
+    log::debug!(
+        "Output format: {}, Temp unit: {:?}",
+        if json { "JSON" } else { "Text" },
+        temp_unit
+    );
+
     // Read status from controller
+    log::debug!("Reading status from controller...");
     let mut status = client.status().await?;
+    log::debug!("Status received successfully");
+    log::debug!(
+        "Raw status: mode={:?}, temp={}, fans={}",
+        status.mode,
+        status.temperature_current.value,
+        status.fans.len()
+    );
 
     // Convert to Fahrenheit if requested
     if temp_unit == Some(1) {
+        log::debug!("Converting temperature to Fahrenheit");
         status = convert_to_fahrenheit(status);
     }
 
     // Output in requested format
+    log::debug!("Formatting output...");
     if json {
         let output = format_status_json(&status)?;
         println!("{}", output);
@@ -36,5 +53,6 @@ pub async fn execute(
         print!("{}", output);
     }
 
+    log::debug!("Status command completed successfully");
     Ok(())
 }
