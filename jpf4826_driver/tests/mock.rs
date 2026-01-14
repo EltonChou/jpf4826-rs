@@ -1,3 +1,5 @@
+#![cfg(feature = "test-mock")]
+
 //! Mock Modbus context for testing without hardware.
 //!
 //! This module provides test utilities for simulating JPF4826 controller

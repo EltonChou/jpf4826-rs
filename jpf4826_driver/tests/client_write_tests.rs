@@ -1,3 +1,5 @@
+#![cfg(feature = "test-mock")]
+
 mod mock;
 
 use jpf4826_driver::{Jpf4826Client, OperatingMode, PwmFrequency, WorkMode};
