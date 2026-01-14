@@ -98,7 +98,6 @@ Options:
 ##### Normal
 
 ```
-Mode                   Temperature
 ECO Mode               True
 Modbus Address         0x0001
 PWM Frequency          25000 Hz
@@ -128,7 +127,6 @@ Fan Status
 
 ```json
 {
-  "mode": "TEMPERATURE",
   "eco_mode": true,
   "modbus_address": 1,
   "pwm_frequency": {

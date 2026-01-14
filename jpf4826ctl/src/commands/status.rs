@@ -31,10 +31,10 @@ pub async fn execute(
     let mut status = client.status().await?;
     log::debug!("Status received successfully");
     log::debug!(
-        "Raw status: mode={:?}, temp={}, fans={}",
-        status.mode,
+        "Raw status: temp={}, fans={}, eco_mode={}",
         status.temperature_current.value,
-        status.fans.len()
+        status.fans.len(),
+        status.eco_mode
     );
 
     // Convert to Fahrenheit if requested

@@ -58,11 +58,13 @@
 - **Range:** 0x0001 to 0x00FE
 - **Broadcast Address:** 0xFFFF supported
 
-#### 0x0003 - Manual Speed Control
+#### 0x0003 - Manual Speed Control / Mode
 
-- **Range:** 0x0000 to 0x0064 (0-100%), 0xFFFF to exit manual mode
+- **Write Range:** 0x0000 to 0x0064 (0-100% manual speed), 0xFFFF to exit manual mode
+- **Read Behavior:** When in temperature mode, this register contains the current calculated speed value (not 0xFFFF)
+- **Important:** The operating mode (Temperature vs Manual) cannot be determined by reading this register
 - **Note:** Temperature control is disabled while in manual mode
-- **Exit:** Write 0xFFFF or power cycle to restore temperature control
+- **Exit Manual Mode:** Write 0xFFFF or power cycle to restore temperature control
 
 #### 0x0004 - Start/Full Temperature (Combined)
 

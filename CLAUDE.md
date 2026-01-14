@@ -21,7 +21,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - It should exposes methods below:
   - `status`: Status of controller. Please refer to status output in @README.md
   - `reset`: Reset controller.
-  - `set_mode`: Set mode of controller, `Temperature` or `Manual`.
   - `set_eco`: Set work mode (Fan shutdown mode = eco mode).
   - `fan_speed`: Get fan speed by given index (1-4).
   - `set_fan_speed`: Manual set speed of fans.
@@ -45,4 +44,5 @@ A command line wrapper to control the controller with standalone driver.
 ## Reference Documentation
 
 - Command line interface is described in @jpf4826ctl/README.md
+- Command line interface: status' JSON output schema is @jpf4826ctl/schemas/jpf4826-status-response.schema.json
 - Modbus protocol details are described in @jpf4826_driver/jpf4826_modbus.md

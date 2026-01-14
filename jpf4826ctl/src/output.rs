@@ -2,7 +2,7 @@
 
 // Rust guideline compliant 2026-01-06
 
-use jpf4826_driver::{ControllerStatus, FanStatus, OperatingMode, Temperature, TemperatureUnit};
+use jpf4826_driver::{ControllerStatus, FanStatus, Temperature, TemperatureUnit};
 
 /// Formats controller status as human-readable text.
 ///
@@ -11,11 +11,6 @@ pub fn format_status_text(status: &ControllerStatus) -> String {
     let mut output = String::new();
 
     // Header
-    let mode_str = match status.mode {
-        OperatingMode::Temperature => "Temperature",
-        OperatingMode::Manual => "Manual",
-    };
-    output.push_str(&format!("Mode\t{}\n", mode_str));
     output.push_str(&format!("ECO Mode\t{}\n", status.eco_mode));
     output.push_str(&format!(
         "Modbus Address\t0x{:04X}\n",
@@ -101,7 +96,6 @@ mod tests {
 
     fn create_test_status() -> ControllerStatus {
         ControllerStatus {
-            mode: OperatingMode::Temperature,
             eco_mode: true,
             modbus_address: 1,
             pwm_frequency: PwmFrequency::Hz25000,
@@ -138,7 +132,6 @@ mod tests {
         let status = create_test_status();
         let output = format_status_text(&status);
 
-        assert!(output.contains("Mode\tTemperature"));
         assert!(output.contains("ECO Mode\ttrue"));
         assert!(output.contains("Modbus Address\t0x0001"));
         assert!(output.contains("PWM Frequency\t25000 Hz"));
@@ -155,8 +148,7 @@ mod tests {
 
         // Parse back to verify it's valid JSON
         let _parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert!(json.contains("\"mode\""));
-        assert!(json.contains("\"TEMPERATURE\""));
+        assert!(json.contains("\"eco_mode\""));
     }
 
     #[test]
@@ -169,5 +161,76 @@ mod tests {
             converted.temperature_current.unit,
             TemperatureUnit::Fahrenheit
         );
+    }
+
+    #[test]
+    fn test_json_output_matches_schema() {
+        // Create a realistic status with all 4 fans
+        let status = ControllerStatus {
+            eco_mode: true,
+            modbus_address: 1,
+            pwm_frequency: PwmFrequency::Hz25000,
+            fan_count: 4,
+            temperature_current: Temperature {
+                value: 26,
+                unit: TemperatureUnit::Celsius,
+            },
+            temperature_low_threshold: Temperature {
+                value: 27,
+                unit: TemperatureUnit::Celsius,
+            },
+            temperature_high_threshold: Temperature {
+                value: 40,
+                unit: TemperatureUnit::Celsius,
+            },
+            fans: vec![
+                FanInfo {
+                    index: 1,
+                    status: FanStatus::Normal,
+                    rpm: 1400,
+                },
+                FanInfo {
+                    index: 2,
+                    status: FanStatus::Fault,
+                    rpm: 0,
+                },
+                FanInfo {
+                    index: 3,
+                    status: FanStatus::Normal,
+                    rpm: 1400,
+                },
+                FanInfo {
+                    index: 4,
+                    status: FanStatus::Normal,
+                    rpm: 1400,
+                },
+            ],
+        };
+
+        // Format as JSON
+        let json_str = format_status_json(&status).unwrap();
+        let json_value: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+
+        // Load schema from file
+        let schema_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("schemas")
+            .join("jpf4826-status-response.schema.json");
+
+        let schema_str = std::fs::read_to_string(&schema_path)
+            .expect("Failed to read schema file");
+        let schema_json: serde_json::Value = serde_json::from_str(&schema_str)
+            .expect("Failed to parse schema JSON");
+
+        // Compile and validate
+        let compiled_schema = jsonschema::validator_for(&schema_json)
+            .expect("Failed to compile schema");
+
+        // Validate returns Result<(), ValidationError>
+        if let Err(validation_error) = compiled_schema.validate(&json_value) {
+            panic!(
+                "JSON output does not match schema:\n{}",
+                validation_error
+            );
+        }
     }
 }

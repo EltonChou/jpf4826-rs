@@ -311,7 +311,7 @@ impl Jpf4826Client {
     /// # async fn main() -> jpf4826_driver::Result<()> {
     /// # let mut client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
     /// let status = client.status().await?;
-    /// println!("Mode: {:?}", status.mode);
+    /// println!("ECO Mode: {}", status.eco_mode);
     /// println!("Temperature: {}°C", status.temperature_current.value);
     /// println!("Fans: {}", status.fan_count);
     /// # Ok(())
@@ -331,7 +331,6 @@ impl Jpf4826Client {
 
         let current_temp = register_to_celsius(values[0]);
         let modbus_address = values[2] as u8;
-        let manual_speed_raw = values[3];
         let work_mode_raw = values[5];
         let fan_count = values[6] as u8;
         let pwm_freq_raw = values[11];
@@ -339,19 +338,11 @@ impl Jpf4826Client {
         let full_temp = register_to_celsius(values[13]);
 
         log::debug!(
-            "Parsed values: temp={}, addr={}, mode_raw={:#06X}, fans={}",
+            "Parsed values: temp={}, addr={}, fans={}",
             current_temp,
             modbus_address,
-            manual_speed_raw,
             fan_count
         );
-
-        // Determine operating mode
-        let mode = if manual_speed_raw == 0xFFFF {
-            OperatingMode::Temperature
-        } else {
-            OperatingMode::Manual
-        };
 
         // Determine ECO mode (work mode)
         let eco_mode = work_mode_raw == 1;
@@ -380,7 +371,6 @@ impl Jpf4826Client {
         log::debug!("Fan status parsed successfully from bulk read");
 
         Ok(ControllerStatus {
-            mode,
             eco_mode,
             modbus_address,
             pwm_frequency,

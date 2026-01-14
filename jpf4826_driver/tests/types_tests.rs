@@ -137,7 +137,6 @@ fn test_fan_info_struct() {
 fn test_controller_status_struct_creation() {
     // Just test that we can create the struct
     let status = ControllerStatus {
-        mode: OperatingMode::Temperature,
         eco_mode: true,
         modbus_address: 1,
         pwm_frequency: PwmFrequency::Hz25000,
@@ -157,7 +156,6 @@ fn test_controller_status_struct_creation() {
         fans: vec![],
     };
 
-    assert!(matches!(status.mode, OperatingMode::Temperature));
     assert!(status.eco_mode);
     assert_eq!(status.fan_count, 4);
 }

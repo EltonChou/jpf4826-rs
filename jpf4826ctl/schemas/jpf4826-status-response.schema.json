@@ -5,7 +5,6 @@
   "description": "JSON schema for JPF4826 fan controller status command output",
   "type": "object",
   "required": [
-    "mode",
     "eco_mode",
     "modbus_address",
     "pwm_frequency",
@@ -14,11 +13,6 @@
     "fans"
   ],
   "properties": {
-    "mode": {
-      "type": "string",
-      "enum": ["TEMPERATURE", "MANUAL"],
-      "description": "Operating mode of the controller"
-    },
     "eco_mode": {
       "type": "boolean",
       "description": "ECO mode status (true=minimum speed mode, false=shutdown mode)"

@@ -104,7 +104,14 @@ pub enum TemperatureUnit {
 /// PWM frequency for fan control signal.
 ///
 /// JPF4826 supports six fixed frequency options.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// # JSON Serialization
+///
+/// Serializes to/from JSON object format:
+/// ```json
+/// {"value": 25000, "unit": "Hz"}
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PwmFrequency {
     /// 500 Hz PWM frequency.
     Hz500,
@@ -203,6 +210,38 @@ impl PwmFrequency {
     }
 }
 
+// Custom serde implementations to match JSON schema format
+impl serde::Serialize for PwmFrequency {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("PwmFrequency", 2)?;
+        state.serialize_field("value", &self.to_hz())?;
+        state.serialize_field("unit", "Hz")?;
+        state.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for PwmFrequency {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct PwmFrequencyHelper {
+            value: u32,
+            #[allow(dead_code)]
+            unit: String,
+        }
+
+        let helper = PwmFrequencyHelper::deserialize(deserializer)?;
+        PwmFrequency::from_hz(helper.value)
+            .ok_or_else(|| serde::de::Error::custom(format!("Invalid PWM frequency: {}", helper.value)))
+    }
+}
+
 /// Temperature reading with associated unit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Temperature {
@@ -227,10 +266,21 @@ pub struct FanInfo {
 ///
 /// This structure mirrors the JSON schema defined in
 /// `schemas/jpf4826-status-response.schema.json`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+///
+/// # JSON Serialization
+///
+/// Temperature fields are serialized as a nested object:
+/// ```json
+/// {
+///   "temperature": {
+///     "current": {...},
+///     "low_threshold": {...},
+///     "high_threshold": {...}
+///   }
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq)]
 pub struct ControllerStatus {
-    /// Current operating mode.
-    pub mode: OperatingMode,
     /// ECO mode enabled (true = minimum speed, false = shutdown).
     pub eco_mode: bool,
     /// Modbus address (1-254).
@@ -247,4 +297,72 @@ pub struct ControllerStatus {
     pub temperature_high_threshold: Temperature,
     /// Status of individual fans.
     pub fans: Vec<FanInfo>,
+}
+
+// Custom serde implementations to match JSON schema format
+impl serde::Serialize for ControllerStatus {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("ControllerStatus", 6)?;
+        state.serialize_field("eco_mode", &self.eco_mode)?;
+        state.serialize_field("modbus_address", &self.modbus_address)?;
+        state.serialize_field("pwm_frequency", &self.pwm_frequency)?;
+        state.serialize_field("fan_count", &self.fan_count)?;
+
+        // Nest temperature fields under "temperature" key
+        #[derive(Serialize)]
+        struct TemperatureNested {
+            current: Temperature,
+            low_threshold: Temperature,
+            high_threshold: Temperature,
+        }
+
+        let temp_nested = TemperatureNested {
+            current: self.temperature_current,
+            low_threshold: self.temperature_low_threshold,
+            high_threshold: self.temperature_high_threshold,
+        };
+        state.serialize_field("temperature", &temp_nested)?;
+        state.serialize_field("fans", &self.fans)?;
+        state.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for ControllerStatus {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct TemperatureNested {
+            current: Temperature,
+            low_threshold: Temperature,
+            high_threshold: Temperature,
+        }
+
+        #[derive(Deserialize)]
+        struct ControllerStatusHelper {
+            eco_mode: bool,
+            modbus_address: u8,
+            pwm_frequency: PwmFrequency,
+            fan_count: u8,
+            temperature: TemperatureNested,
+            fans: Vec<FanInfo>,
+        }
+
+        let helper = ControllerStatusHelper::deserialize(deserializer)?;
+        Ok(ControllerStatus {
+            eco_mode: helper.eco_mode,
+            modbus_address: helper.modbus_address,
+            pwm_frequency: helper.pwm_frequency,
+            fan_count: helper.fan_count,
+            temperature_current: helper.temperature.current,
+            temperature_low_threshold: helper.temperature.low_threshold,
+            temperature_high_threshold: helper.temperature.high_threshold,
+            fans: helper.fans,
+        })
+    }
 }
