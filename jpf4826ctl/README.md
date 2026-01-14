@@ -49,6 +49,7 @@ Commands:
 Options:
   -p, --port <PORT>  Serial port (falls back to JPF4826_PORT env var) [env: JPF4826_PORT=]
   -a, --addr <ADDR>  Modbus address (falls back to JPF4826_ADDR env var) [env: JPF4826_ADDR=]
+  -v, --verbose      Enable verbose logging (debug output)
   -h, --help         Print help
   -V, --version      Print version
 ```

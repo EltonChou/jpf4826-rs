@@ -10,7 +10,8 @@ use clap::{Parser, Subcommand};
     name = "jpf4826ctl",
     version,
     about = "Control JPF4826 fan controller via Modbus-RTU",
-    long_about = None
+    long_about = None,
+    arg_required_else_help = true
 )]
 pub struct Cli {
     /// Serial port path (e.g., /dev/ttyUSB0, COM3)
