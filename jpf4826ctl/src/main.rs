@@ -38,11 +38,46 @@ async fn run() -> anyhow::Result<()> {
         .format_timestamp_micros()
         .init();
 
-    log::debug!("CLI arguments: {:?}", cli);
+    // If no subcommand provided, print help and exit
+    if cli.command.is_none() {
+        Cli::parse_from(["jpf4826ctl", "--help"]);
+        unreachable!();
+    }
 
     // Validate required global options
     let port = cli.get_port().map_err(|e| anyhow::anyhow!(e))?;
     let addr = cli.get_addr().map_err(|e| anyhow::anyhow!(e))?;
+
+    // Extract command (safe because we checked is_none above)
+    let command = cli.command.expect("command must be present");
+
+    // If set command with no options, show help
+    if let Commands::Set {
+        mode,
+        modbus_addr,
+        low_temp,
+        high_temp,
+        eco,
+        fan_qty,
+        pwm_freq,
+        manual_speed,
+    } = &command
+    {
+        let args = commands::set::SetArgs {
+            mode: *mode,
+            modbus_addr: *modbus_addr,
+            low_temp: *low_temp,
+            high_temp: *high_temp,
+            eco: *eco,
+            fan_qty: *fan_qty,
+            pwm_freq: *pwm_freq,
+            manual_speed: *manual_speed,
+        };
+        if args.is_empty() {
+            Cli::parse_from(["jpf4826ctl", "set", "--help"]);
+            unreachable!();
+        }
+    }
 
     log::debug!("Connecting to port: {}, address: {}", port, addr);
 
@@ -54,8 +89,8 @@ async fn run() -> anyhow::Result<()> {
     log::debug!("Successfully connected to controller");
 
     // Execute command
-    log::debug!("Executing command: {:?}", cli.command);
-    match cli.command {
+    log::debug!("Executing command: {:?}", command);
+    match command {
         Commands::Status { json, temp_unit } => {
             commands::status::execute(&mut client, json, temp_unit).await?;
         }

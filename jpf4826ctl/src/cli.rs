@@ -39,7 +39,7 @@ pub struct Cli {
 
     /// Command to execute
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 }
 
 /// Available commands

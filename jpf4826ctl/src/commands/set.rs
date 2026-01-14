@@ -17,6 +17,20 @@ pub struct SetArgs {
     pub manual_speed: Option<u8>,
 }
 
+impl SetArgs {
+    /// Checks if all options are None (no arguments provided).
+    pub fn is_empty(&self) -> bool {
+        self.mode.is_none()
+            && self.modbus_addr.is_none()
+            && self.low_temp.is_none()
+            && self.high_temp.is_none()
+            && self.eco.is_none()
+            && self.fan_qty.is_none()
+            && self.pwm_freq.is_none()
+            && self.manual_speed.is_none()
+    }
+}
+
 /// Executes the set command.
 ///
 /// Applies one or more configuration changes to the controller.
@@ -115,9 +129,7 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
         println!("✓ Manual speed set to {}%", speed);
     }
 
-    if operations_count == 0 {
-        println!("No options specified. Use --help to see available options.");
-    } else {
+    if operations_count > 0 {
         println!(
             "\n{} operation(s) completed successfully.",
             operations_count
