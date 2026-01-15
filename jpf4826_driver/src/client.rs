@@ -331,7 +331,6 @@ impl Jpf4826Client {
 
         let current_temp = register_to_celsius(values[0]);
         let modbus_address = values[2] as u8;
-        let work_mode_raw = values[5];
         let fan_count = values[6] as u8;
         let pwm_freq_raw = values[11];
         let start_temp = register_to_celsius(values[12]);
@@ -344,8 +343,11 @@ impl Jpf4826Client {
             fan_count
         );
 
-        // Determine ECO mode (work mode)
-        let eco_mode = work_mode_raw == 1;
+        // Parse work mode and determine ECO mode
+        // ECO mode = true means Shutdown (more energy efficient)
+        // ECO mode = false means MinimumSpeed
+        let work_mode = WorkMode::from_register_value(values[5]).unwrap_or(WorkMode::MinimumSpeed);
+        let eco_mode = work_mode == WorkMode::Shutdown;
 
         // Parse PWM frequency
         let pwm_frequency =

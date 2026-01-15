@@ -86,7 +86,7 @@ async fn test_read_full_status() {
     // Verify all fields
     assert_eq!(status.modbus_address, 1);
     assert_eq!(status.fan_count, 4);
-    assert!(status.eco_mode); // Work mode = 1 = MinimumSpeed
+    assert!(!status.eco_mode); // Work mode = 1 = MinimumSpeed, so eco_mode = false
     assert_eq!(status.temperature_current.value, 31);
     assert_eq!(status.temperature_low_threshold.value, 30);
     assert_eq!(status.temperature_high_threshold.value, 50);

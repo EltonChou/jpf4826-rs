@@ -216,21 +216,17 @@ mod tests {
             .join("schemas")
             .join("jpf4826-status-response.schema.json");
 
-        let schema_str = std::fs::read_to_string(&schema_path)
-            .expect("Failed to read schema file");
-        let schema_json: serde_json::Value = serde_json::from_str(&schema_str)
-            .expect("Failed to parse schema JSON");
+        let schema_str = std::fs::read_to_string(&schema_path).expect("Failed to read schema file");
+        let schema_json: serde_json::Value =
+            serde_json::from_str(&schema_str).expect("Failed to parse schema JSON");
 
         // Compile and validate
-        let compiled_schema = jsonschema::validator_for(&schema_json)
-            .expect("Failed to compile schema");
+        let compiled_schema =
+            jsonschema::validator_for(&schema_json).expect("Failed to compile schema");
 
         // Validate returns Result<(), ValidationError>
         if let Err(validation_error) = compiled_schema.validate(&json_value) {
-            panic!(
-                "JSON output does not match schema:\n{}",
-                validation_error
-            );
+            panic!("JSON output does not match schema:\n{}", validation_error);
         }
     }
 }

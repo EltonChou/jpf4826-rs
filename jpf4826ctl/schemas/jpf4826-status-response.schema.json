@@ -15,7 +15,7 @@
   "properties": {
     "eco_mode": {
       "type": "boolean",
-      "description": "ECO mode status (true=minimum speed mode, false=shutdown mode)"
+      "description": "ECO mode status (true=shutdown mode, false=minimum speed mode)"
     },
     "modbus_address": {
       "type": "integer",

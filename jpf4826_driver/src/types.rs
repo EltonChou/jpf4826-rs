@@ -237,8 +237,9 @@ impl<'de> serde::Deserialize<'de> for PwmFrequency {
         }
 
         let helper = PwmFrequencyHelper::deserialize(deserializer)?;
-        PwmFrequency::from_hz(helper.value)
-            .ok_or_else(|| serde::de::Error::custom(format!("Invalid PWM frequency: {}", helper.value)))
+        PwmFrequency::from_hz(helper.value).ok_or_else(|| {
+            serde::de::Error::custom(format!("Invalid PWM frequency: {}", helper.value))
+        })
     }
 }
 
@@ -281,7 +282,7 @@ pub struct FanInfo {
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct ControllerStatus {
-    /// ECO mode enabled (true = minimum speed, false = shutdown).
+    /// ECO mode enabled (true = shutdown mode, false = minimum speed mode).
     pub eco_mode: bool,
     /// Modbus address (1-254).
     pub modbus_address: u8,
