@@ -58,9 +58,9 @@ pub enum Commands {
 
     /// Set controller registers
     Set {
-        /// Operating mode (0=Temperature, 1=Manual)
-        #[arg(long, value_parser = clap::value_parser!(u8).range(0..=1))]
-        mode: Option<u8>,
+        /// Switch to automatic temperature mode
+        #[arg(long, conflicts_with = "manual_speed")]
+        auto_speed: bool,
 
         /// Modbus address (1-254)
         #[arg(long, value_parser = clap::value_parser!(u8).range(1..=254))]
@@ -86,8 +86,8 @@ pub enum Commands {
         #[arg(long, value_parser = validate_pwm_freq)]
         pwm_freq: Option<u32>,
 
-        /// Manual speed percentage (0-100, only for manual mode)
-        #[arg(long, value_parser = clap::value_parser!(u8).range(0..=100))]
+        /// Manual speed percentage (0-100, switches to manual mode)
+        #[arg(long, value_parser = clap::value_parser!(u8).range(0..=100), conflicts_with = "auto_speed")]
         manual_speed: Option<u8>,
     },
 

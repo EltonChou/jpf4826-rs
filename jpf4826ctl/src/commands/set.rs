@@ -7,7 +7,7 @@ use jpf4826_driver::{Jpf4826Client, OperatingMode, PwmFrequency, WorkMode};
 /// Arguments for the set command.
 #[derive(Debug)]
 pub struct SetArgs {
-    pub mode: Option<u8>,
+    pub auto_speed: bool,
     pub modbus_addr: Option<u8>,
     pub low_temp: Option<i16>,
     pub high_temp: Option<i16>,
@@ -20,7 +20,7 @@ pub struct SetArgs {
 impl SetArgs {
     /// Checks if all options are None (no arguments provided).
     pub fn is_empty(&self) -> bool {
-        self.mode.is_none()
+        !self.auto_speed
             && self.modbus_addr.is_none()
             && self.low_temp.is_none()
             && self.high_temp.is_none()
@@ -42,16 +42,11 @@ impl SetArgs {
 pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Result<()> {
     let mut operations_count = 0;
 
-    // Set operating mode
-    if let Some(mode) = args.mode {
-        let operating_mode = match mode {
-            0 => OperatingMode::Temperature,
-            1 => OperatingMode::Manual,
-            _ => unreachable!("clap should validate this"),
-        };
-        client.set_mode(operating_mode).await?;
+    // Set automatic temperature mode
+    if args.auto_speed {
+        client.set_mode(OperatingMode::Temperature).await?;
         operations_count += 1;
-        println!("✓ Operating mode set to {:?}", operating_mode);
+        println!("✓ Operating mode set to Temperature (automatic)");
     }
 
     // Set Modbus address
@@ -119,11 +114,14 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
         println!("✓ PWM frequency set to {} Hz", freq_hz);
     }
 
-    // Set manual speed (only valid in manual mode)
+    // Set manual speed (automatically switches to manual mode)
     if let Some(speed) = args.manual_speed {
-        if args.mode != Some(1) {
-            eprintln!("Warning: --manual_speed is only effective when --mode=1 (Manual)");
-        }
+        // First switch to manual mode
+        client.set_mode(OperatingMode::Manual).await?;
+        operations_count += 1;
+        println!("✓ Operating mode set to Manual");
+
+        // Then set the speed
         client.set_fan_speed(speed).await?;
         operations_count += 1;
         println!("✓ Manual speed set to {}%", speed);

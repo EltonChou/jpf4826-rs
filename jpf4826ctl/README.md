@@ -179,7 +179,6 @@ Set registers of controller by arguments
 
 ```bash
 jpf4826ctl set \
-  --mode=0 \
   --modbus-addr=5 \
   --low-temp=25 \
   --high-temp=38 \
@@ -200,23 +199,24 @@ Set controller registers
 Usage: jpf4826ctl set [OPTIONS]
 
 Options:
-      --mode <MODE>                  Operating mode (0=Temperature, 1=Manual)
+      --auto-speed                   Switch to automatic temperature mode
       --modbus-addr <MODBUS_ADDR>    Modbus address (1-254)
       --low-temp <LOW_TEMP>          Start temperature threshold (-20 to 120°C)
       --high-temp <HIGH_TEMP>        Full speed temperature threshold (-20 to 120°C)
       --eco <ECO>                    ECO/work mode (0=Shutdown, 1=Minimum speed)
       --fan-qty <FAN_QTY>            Number of fans (1-4, 0=disable fault detection)
       --pwm-freq <PWM_FREQ>          PWM frequency (500, 1000, 2000, 5000, 10000, 25000 Hz)
-      --manual-speed <MANUAL_SPEED>  Manual speed percentage (0-100, only for manual mode)
+      --manual-speed <MANUAL_SPEED>  Manual speed percentage (0-100, switches to manual mode)
   -h, --help                         Print help
 ```
 
 #### Option Details
 
-- `--mode`: Operating mode
-  - `0`: Temperature mode (automatic speed control based on temperature)
-  - `1`: Manual mode (requires `--manual-speed` to set fixed speed percentage)
-  - Maps to register 0x0003 (write 0xFFFF for temperature mode, or 0-100 for manual mode)
+- `--auto-speed`: Switch to automatic temperature mode
+  - Boolean flag (no value needed)
+  - Switches controller to temperature-based automatic speed control
+  - Cannot be used together with `--manual-speed`
+  - Maps to register 0x0003 (writes 0xFFFF for temperature mode)
 
 - `--modbus-addr`: Modbus address of the controller
   - Range: `1-254`
@@ -248,10 +248,12 @@ Options:
   - Default: `25000` Hz
   - Maps to register `0x000B`
 
-- `--manual-speed`: Manual speed percentage (only valid when `--mode=1`)
+- `--manual-speed`: Manual speed percentage
   - Range: `0-100`
+  - Automatically switches controller to manual mode
   - Disables temperature-based control
-  - Maps to register `0x0003`
+  - Cannot be used together with `--auto-speed`
+  - Maps to register `0x0003` (writes speed percentage value)
 
 ### `reset`
 

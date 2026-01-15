@@ -53,7 +53,7 @@ async fn run() -> anyhow::Result<()> {
 
     // If set command with no options, show help
     if let Commands::Set {
-        mode,
+        auto_speed,
         modbus_addr,
         low_temp,
         high_temp,
@@ -64,7 +64,7 @@ async fn run() -> anyhow::Result<()> {
     } = &command
     {
         let args = commands::set::SetArgs {
-            mode: *mode,
+            auto_speed: *auto_speed,
             modbus_addr: *modbus_addr,
             low_temp: *low_temp,
             high_temp: *high_temp,
@@ -95,7 +95,7 @@ async fn run() -> anyhow::Result<()> {
             commands::status::execute(&mut client, json, temp_unit).await?;
         }
         Commands::Set {
-            mode,
+            auto_speed,
             modbus_addr,
             low_temp,
             high_temp,
@@ -105,7 +105,7 @@ async fn run() -> anyhow::Result<()> {
             manual_speed,
         } => {
             let args = commands::set::SetArgs {
-                mode,
+                auto_speed,
                 modbus_addr,
                 low_temp,
                 high_temp,
