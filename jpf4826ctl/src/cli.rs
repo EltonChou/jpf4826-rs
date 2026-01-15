@@ -74,7 +74,7 @@ pub enum Commands {
         #[arg(long, value_parser = clap::value_parser!(i16).range(-20..=120))]
         high_temp: Option<i16>,
 
-        /// ECO/work mode (0=Shutdown, 1=Minimum speed)
+        /// ECO/work mode (0=Minimum speed, 1=Shutdown)
         #[arg(long, value_parser = clap::value_parser!(u8).range(0..=1))]
         eco: Option<u8>,
 

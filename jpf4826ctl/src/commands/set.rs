@@ -85,8 +85,8 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
     // Set ECO mode
     if let Some(eco) = args.eco {
         let work_mode = match eco {
-            0 => WorkMode::Shutdown,
-            1 => WorkMode::MinimumSpeed,
+            0 => WorkMode::MinimumSpeed,
+            1 => WorkMode::Shutdown,
             _ => unreachable!("clap should validate this"),
         };
         client.set_eco(work_mode).await?;

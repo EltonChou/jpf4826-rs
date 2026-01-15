@@ -203,7 +203,7 @@ Options:
       --modbus-addr <MODBUS_ADDR>    Modbus address (1-254)
       --low-temp <LOW_TEMP>          Start temperature threshold (-20 to 120°C)
       --high-temp <HIGH_TEMP>        Full speed temperature threshold (-20 to 120°C)
-      --eco <ECO>                    ECO/work mode (0=Shutdown, 1=Minimum speed)
+      --eco <ECO>                    ECO/work mode (0=Minimum speed, 1=Shutdown)
       --fan-qty <FAN_QTY>            Number of fans (1-4, 0=disable fault detection)
       --pwm-freq <PWM_FREQ>          PWM frequency (500, 1000, 2000, 5000, 10000, 25000 Hz)
       --manual-speed <MANUAL_SPEED>  Manual speed percentage (0-100, switches to manual mode)
