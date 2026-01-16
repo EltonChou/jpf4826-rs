@@ -6,14 +6,10 @@
 // Rust guideline compliant 2026-01-16
 
 use crate::{
-    conversions::{
-        celsius_to_register, parse_fan_fault_bitmap, register_to_celsius,
-    },
+    conversions::{celsius_to_register, parse_fan_fault_bitmap, register_to_celsius},
     error::{Jpf4826Error, Result},
     registers::RegisterAddress,
-    types::{
-        ControllerStatus, FanInfo, PwmFrequency, Temperature, TemperatureUnit, WorkMode,
-    },
+    types::{ControllerStatus, FanInfo, PwmFrequency, Temperature, TemperatureUnit, WorkMode},
 };
 
 /// JPF4826 fan controller client.
@@ -483,7 +479,8 @@ impl Jpf4826Client {
     ///
     /// Returns error if Modbus communication fails.
     pub async fn set_auto_speed(&mut self) -> Result<()> {
-        self.write(RegisterAddress::ManualSpeedControl, 0xFFFF).await
+        self.write(RegisterAddress::ManualSpeedControl, 0xFFFF)
+            .await
     }
 
     /// Sets the ECO/work mode.
