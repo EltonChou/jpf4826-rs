@@ -1,8 +1,15 @@
 //! Output formatting for status command.
 
-// Rust guideline compliant 2026-01-06
+// Rust guideline compliant 2026-01-16
 
 use jpf4826_driver::{ControllerStatus, FanStatus, Temperature, TemperatureUnit};
+
+/// Column width for label alignment in text output.
+///
+/// Set to 22 characters to accommodate the longest top-level label
+/// ("Modbus Address") plus adequate spacing, and to align nested labels
+/// (e.g., "Low Threshold" with 4-space indent) consistently.
+const LABEL_WIDTH: usize = 22;
 
 /// Formats controller status as human-readable text.
 ///
@@ -10,42 +17,52 @@ use jpf4826_driver::{ControllerStatus, FanStatus, Temperature, TemperatureUnit};
 pub fn format_status_text(status: &ControllerStatus) -> String {
     let mut output = String::new();
 
-    // Header
-    output.push_str(&format!("ECO Mode\t{}\n", status.eco_mode));
+    // Header section with fixed-width label column
     output.push_str(&format!(
-        "Modbus Address\t0x{:04X}\n",
-        status.modbus_address
+        "{:<LABEL_WIDTH$}{}\n",
+        "ECO Mode", status.eco_mode
     ));
     output.push_str(&format!(
-        "PWM Frequency\t{} Hz\n",
+        "{:<LABEL_WIDTH$}0x{:04X}\n",
+        "Modbus Address", status.modbus_address
+    ));
+    output.push_str(&format!(
+        "{:<LABEL_WIDTH$}{} Hz\n",
+        "PWM Frequency",
         status.pwm_frequency.to_hz()
     ));
-    output.push_str(&format!("Fan Quantity\t{}\n", status.fan_count));
-
-    // Temperature section
     output.push_str(&format!(
-        "Temperature\t{}\n",
+        "{:<LABEL_WIDTH$}{}\n",
+        "Fan Quantity", status.fan_count
+    ));
+
+    // Temperature section (4-space indent for nested items)
+    output.push_str(&format!(
+        "{:<LABEL_WIDTH$}{}\n",
+        "Temperature",
         format_temperature(&status.temperature_current)
     ));
     output.push_str(&format!(
-        "\tLow Threshold\t{}\n",
+        "    {:<18}{}\n",
+        "Low Threshold",
         format_temperature(&status.temperature_low_threshold)
     ));
     output.push_str(&format!(
-        "\tHigh Threshold\t{}\n",
+        "    {:<18}{}\n",
+        "High Threshold",
         format_temperature(&status.temperature_high_threshold)
     ));
 
     // Fan status section
     output.push_str("\nFan Status\n");
     for fan in &status.fans {
-        output.push_str(&format!("\t{}\n", fan.index));
+        output.push_str(&format!("    {}\n", fan.index));
         let status_str = match fan.status {
             FanStatus::Normal => "Normal",
             FanStatus::Fault => "Fault",
         };
-        output.push_str(&format!("\t\tStatus\t{}\n", status_str));
-        output.push_str(&format!("\t\tSpeed (RPM)\t{}\n", fan.rpm));
+        output.push_str(&format!("        {:<14}{}\n", "Status", status_str));
+        output.push_str(&format!("        {:<14}{}\n", "Speed (RPM)", fan.rpm));
     }
 
     output
@@ -132,13 +149,14 @@ mod tests {
         let status = create_test_status();
         let output = format_status_text(&status);
 
-        assert!(output.contains("ECO Mode\ttrue"));
-        assert!(output.contains("Modbus Address\t0x0001"));
-        assert!(output.contains("PWM Frequency\t25000 Hz"));
-        assert!(output.contains("Fan Quantity\t4"));
-        assert!(output.contains("Temperature\t26 ℃"));
-        assert!(output.contains("Status\tNormal"));
-        assert!(output.contains("Status\tFault"));
+        // Verify fixed-width column alignment (22 chars for labels)
+        assert!(output.contains("ECO Mode              true"));
+        assert!(output.contains("Modbus Address        0x0001"));
+        assert!(output.contains("PWM Frequency         25000 Hz"));
+        assert!(output.contains("Fan Quantity          4"));
+        assert!(output.contains("Temperature           26 ℃"));
+        assert!(output.contains("Status        Normal"));
+        assert!(output.contains("Status        Fault"));
     }
 
     #[test]
