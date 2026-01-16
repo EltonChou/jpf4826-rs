@@ -3,13 +3,17 @@
 //! This module provides the main client interface for interacting with
 //! JPF4826 fan controllers via serial Modbus-RTU protocol.
 
-// Rust guideline compliant 2026-01-06
+// Rust guideline compliant 2026-01-16
 
 use crate::{
-    conversions::*,
+    conversions::{
+        celsius_to_register, parse_fan_fault_bitmap, register_to_celsius,
+    },
     error::{Jpf4826Error, Result},
     registers::RegisterAddress,
-    types::*,
+    types::{
+        ControllerStatus, FanInfo, PwmFrequency, Temperature, TemperatureUnit, WorkMode,
+    },
 };
 
 /// JPF4826 fan controller client.
@@ -398,7 +402,7 @@ impl Jpf4826Client {
     /// Writes a single holding register to the controller.
     ///
     /// Low-level method for writing raw register values. Most users should
-    /// use the high-level methods like `set_mode()` or `reset()` instead.
+    /// use the high-level methods like `set_fan_speed()` or `reset()` instead.
     ///
     /// The Modbus protocol validates the write by verifying the controller
     /// echoes back the same register address and value.
@@ -453,20 +457,24 @@ impl Jpf4826Client {
         self.write(RegisterAddress::ResetController, 0x00AA).await
     }
 
-    /// Sets the operating mode (Temperature or Manual).
+    /// Switches to automatic temperature-based speed control.
     ///
     /// In temperature mode, fan speed is controlled automatically based on
-    /// temperature sensor readings. In manual mode, use `set_fan_speed()`
-    /// to control speed directly.
+    /// temperature sensor readings. The controller adjusts fan speed between
+    /// the configured low (start) and high (full speed) temperature thresholds.
+    ///
+    /// To switch to manual mode, use `set_fan_speed()` which automatically
+    /// enables manual mode when setting a speed percentage.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # use jpf4826_driver::{Jpf4826Client, OperatingMode};
+    /// # use jpf4826_driver::Jpf4826Client;
     /// # #[tokio::main]
     /// # async fn main() -> jpf4826_driver::Result<()> {
     /// # let mut client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
-    /// client.set_mode(OperatingMode::Temperature).await?;
+    /// // Switch to automatic temperature control
+    /// client.set_auto_speed().await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -474,9 +482,8 @@ impl Jpf4826Client {
     /// # Errors
     ///
     /// Returns error if Modbus communication fails.
-    pub async fn set_mode(&mut self, mode: OperatingMode) -> Result<()> {
-        let value = mode.to_register_value();
-        self.write(RegisterAddress::ManualSpeedControl, value).await
+    pub async fn set_auto_speed(&mut self) -> Result<()> {
+        self.write(RegisterAddress::ManualSpeedControl, 0xFFFF).await
     }
 
     /// Sets the ECO/work mode.
@@ -504,9 +511,13 @@ impl Jpf4826Client {
         self.write(RegisterAddress::WorkMode, value).await
     }
 
-    /// Sets manual fan speed percentage (Manual mode only).
+    /// Sets manual fan speed percentage.
     ///
-    /// Speed percentage range: 0-100. Controller must be in Manual mode.
+    /// This method automatically switches the controller to manual mode
+    /// and sets the specified speed percentage. Temperature-based control
+    /// is disabled while in manual mode.
+    ///
+    /// To return to automatic temperature control, call `set_auto_speed()`.
     ///
     /// # Arguments
     ///
@@ -515,13 +526,15 @@ impl Jpf4826Client {
     /// # Examples
     ///
     /// ```no_run
-    /// # use jpf4826_driver::{Jpf4826Client, OperatingMode};
+    /// # use jpf4826_driver::Jpf4826Client;
     /// # #[tokio::main]
     /// # async fn main() -> jpf4826_driver::Result<()> {
     /// # let mut client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
-    /// // Switch to manual mode and set 75% speed
-    /// client.set_mode(OperatingMode::Manual).await?;
+    /// // Set fans to 75% speed (automatically enables manual mode)
     /// client.set_fan_speed(75).await?;
+    ///
+    /// // Return to automatic temperature control
+    /// client.set_auto_speed().await?;
     /// # Ok(())
     /// # }
     /// ```

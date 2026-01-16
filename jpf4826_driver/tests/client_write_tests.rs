@@ -2,7 +2,7 @@
 
 mod mock;
 
-use jpf4826_driver::{Jpf4826Client, OperatingMode, PwmFrequency, WorkMode};
+use jpf4826_driver::{Jpf4826Client, PwmFrequency, WorkMode};
 use mock::MockController;
 
 // Helper to create a test client
@@ -42,25 +42,14 @@ async fn test_reset() {
 }
 
 #[tokio::test]
-async fn test_set_mode_temperature() {
+async fn test_set_auto_speed() {
     let (mut client, mock) = create_test_client().await;
 
-    client.set_mode(OperatingMode::Temperature).await.unwrap();
+    client.set_auto_speed().await.unwrap();
 
-    // Verify 0xFFFF was written to register 0x0003
+    // Verify 0xFFFF was written to register 0x0003 to enable temperature mode
     let value = mock.read_register(0x0003).unwrap();
     assert_eq!(value, 0xFFFF);
-}
-
-#[tokio::test]
-async fn test_set_mode_manual() {
-    let (mut client, mock) = create_test_client().await;
-
-    client.set_mode(OperatingMode::Manual).await.unwrap();
-
-    // Manual mode sets register to 0 (actual speed set via set_fan_speed)
-    let value = mock.read_register(0x0003).unwrap();
-    assert_eq!(value, 0);
 }
 
 #[tokio::test]

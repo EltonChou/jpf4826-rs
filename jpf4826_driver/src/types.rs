@@ -3,36 +3,9 @@
 //! This module defines type-safe representations for controller modes,
 //! statuses, and data structures matching the Modbus register protocol.
 
-// Rust guideline compliant 2026-01-06
+// Rust guideline compliant 2026-01-16
 
 use serde::{Deserialize, Serialize};
-
-/// Operating mode for fan speed control.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum OperatingMode {
-    /// Automatic speed control based on temperature sensor.
-    Temperature,
-    /// Manual speed control with fixed percentage.
-    Manual,
-}
-
-impl OperatingMode {
-    /// Converts to Modbus register value for mode setting.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use jpf4826_driver::types::OperatingMode;
-    /// assert_eq!(OperatingMode::Temperature.to_register_value(), 0xFFFF);
-    /// ```
-    pub fn to_register_value(self) -> u16 {
-        match self {
-            OperatingMode::Temperature => 0xFFFF,
-            OperatingMode::Manual => 0x0000, // Actual speed set via separate register
-        }
-    }
-}
 
 /// Work mode determining fan behavior below start temperature.
 ///

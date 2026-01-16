@@ -1,8 +1,8 @@
 //! Set command implementation.
 
-// Rust guideline compliant 2026-01-06
+// Rust guideline compliant 2026-01-16
 
-use jpf4826_driver::{Jpf4826Client, OperatingMode, PwmFrequency, WorkMode};
+use jpf4826_driver::{Jpf4826Client, PwmFrequency, WorkMode};
 
 /// Arguments for the set command.
 #[derive(Debug)]
@@ -44,7 +44,7 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
 
     // Set automatic temperature mode
     if args.auto_speed {
-        client.set_mode(OperatingMode::Temperature).await?;
+        client.set_auto_speed().await?;
         operations_count += 1;
         println!("✓ Operating mode set to Temperature (automatic)");
     }
@@ -116,15 +116,9 @@ pub async fn execute(client: &mut Jpf4826Client, args: SetArgs) -> anyhow::Resul
 
     // Set manual speed (automatically switches to manual mode)
     if let Some(speed) = args.manual_speed {
-        // First switch to manual mode
-        client.set_mode(OperatingMode::Manual).await?;
-        operations_count += 1;
-        println!("✓ Operating mode set to Manual");
-
-        // Then set the speed
         client.set_fan_speed(speed).await?;
         operations_count += 1;
-        println!("✓ Manual speed set to {}%", speed);
+        println!("✓ Manual speed set to {}% (manual mode enabled)", speed);
     }
 
     if operations_count > 0 {

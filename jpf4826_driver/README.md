@@ -38,7 +38,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ## Quick Start
 
 ```rust
-use jpf4826_driver::{Jpf4826Client, OperatingMode, WorkMode};
+use jpf4826_driver::{Jpf4826Client, WorkMode};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client.set_temperature_threshold(30, 50).await?;
 
     // Enable automatic temperature mode
-    client.set_mode(OperatingMode::Temperature).await?;
+    client.set_auto_speed().await?;
 
     // Set ECO mode (maintain 20% speed below threshold)
     client.set_eco(WorkMode::MinimumSpeed).await?;
@@ -95,22 +95,19 @@ async fn main() -> jpf4826_driver::Result<()> {
 ### Manual Speed Control
 
 ```rust
-use jpf4826_driver::{Jpf4826Client, OperatingMode};
+use jpf4826_driver::Jpf4826Client;
 
 #[tokio::main]
 async fn main() -> jpf4826_driver::Result<()> {
     let mut client = Jpf4826Client::new("COM3", 1).await?;
 
-    // Switch to manual mode
-    client.set_mode(OperatingMode::Manual).await?;
-
-    // Set fan speed to 75%
+    // Set fan speed to 75% (automatically enables manual mode)
     client.set_fan_speed(75).await?;
 
     println!("Fans set to 75% speed");
 
     // Return to automatic temperature control
-    client.set_mode(OperatingMode::Temperature).await?;
+    client.set_auto_speed().await?;
 
     Ok(())
 }
@@ -156,7 +153,6 @@ async fn main() -> jpf4826_driver::Result<()> {
     let status = client.status().await?;
 
     println!("=== JPF4826 Controller Status ===");
-    println!("Mode: {:?}", status.mode);
     println!("ECO Mode: {}", status.eco_mode);
     println!("Modbus Address: 0x{:02X}", status.modbus_address);
     println!("PWM Frequency: {} Hz", status.pwm_frequency.to_hz());
@@ -216,7 +212,6 @@ The driver automatically configures the serial port with JPF4826 specifications:
 
 ### Core Types
 
-- **`OperatingMode`**: `Temperature` (automatic) or `Manual`
 - **`WorkMode`**: `Shutdown` or `MinimumSpeed` (ECO mode)
 - **`PwmFrequency`**: 500, 1000, 2000, 5000, 10000, or 25000 Hz
 - **`FanStatus`**: `Normal` or `Fault`
@@ -235,9 +230,9 @@ The driver automatically configures the serial port with JPF4826 specifications:
 - `fan_status() -> Result<Vec<FanInfo>>` - All fan statuses
 
 #### Write Operations
-- `set_mode(mode: OperatingMode) -> Result<()>` - Set operating mode
+- `set_auto_speed() -> Result<()>` - Switch to automatic temperature-based speed control
 - `set_eco(mode: WorkMode) -> Result<()>` - Set ECO/work mode
-- `set_fan_speed(speed_percent: u8) -> Result<()>` - Manual speed (0-100%)
+- `set_fan_speed(speed_percent: u8) -> Result<()>` - Set manual speed (0-100%, automatically enables manual mode)
 - `set_fan_count(count: u8) -> Result<()>` - Set fan count (0-4, 0=disable fault detection)
 - `set_temperature_threshold(low: i16, high: i16) -> Result<()>` - Temperature range (-20 to 120°C)
 - `set_pwm_frequency(freq: PwmFrequency) -> Result<()>` - PWM frequency

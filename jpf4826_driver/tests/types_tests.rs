@@ -1,20 +1,6 @@
 use jpf4826_driver::types::*;
 
 #[test]
-fn test_operating_mode_temperature() {
-    let mode = OperatingMode::Temperature;
-    assert_eq!(mode.to_register_value(), 0xFFFF);
-}
-
-#[test]
-fn test_operating_mode_manual() {
-    // Manual mode uses 0-100 values, not an enum value
-    // The actual speed is set separately via set_fan_speed
-    // This test verifies the enum exists
-    let _mode = OperatingMode::Manual;
-}
-
-#[test]
 fn test_work_mode_shutdown() {
     let mode = WorkMode::Shutdown;
     assert_eq!(mode.to_register_value(), 0x0000);
