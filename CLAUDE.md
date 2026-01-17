@@ -24,6 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `set_eco`: Set work mode (Fan shutdown mode = eco mode).
   - `fan_speed`: Get fan speed by given index (1-4).
   - `set_fan_speed`: Manual set speed of fans.
+  - `set_auto_speed`: Auto-speed mode by current temperature.
   - `fan_count`: Get quantity of fans.
   - `fan_status`: Output all fans' status. Includes `index`, `fault`, `speed`.
   - `disable_fault_detection`: Disable fault detection.
