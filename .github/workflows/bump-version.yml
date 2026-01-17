@@ -1,0 +1,86 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump strategy'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    name: Run CI
+    uses: ./.github/workflows/ci.yml
+
+  bump:
+    name: Bump Version and Create Tag
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-edit
+        run: cargo install cargo-edit
+
+      - name: Bump version
+        run: cargo set-version --workspace --bump ${{ github.event.inputs.bump }}
+
+      - name: Get new version
+        id: get_version
+        run: |
+          VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $VERSION"
+
+      - name: Update jpf4826ctl dependency version
+        run: |
+          VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          cd jpf4826ctl
+          cargo add jpf4826_driver@$VERSION --path ../jpf4826_driver
+
+      - name: Update Cargo.lock
+        run: cargo update --workspace
+
+      - name: Update CHANGELOG
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: cliff.toml
+          args: --tag v${{ steps.get_version.outputs.version }}
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Commit version bump and changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml jpf4826_driver/Cargo.toml jpf4826ctl/Cargo.toml Cargo.lock CHANGELOG.md
+          git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }}"
+          git tag "v${{ steps.get_version.outputs.version }}"
+
+      - name: Push changes and tag
+        run: |
+          git push origin master
+          git push origin "v${{ steps.get_version.outputs.version }}"
+
+      - name: Summary
+        run: |
+          echo "### Version Bump Complete! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bump Strategy**: ${{ github.event.inputs.bump }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Version**: ${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: v${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release workflow will be triggered automatically." >> $GITHUB_STEP_SUMMARY
