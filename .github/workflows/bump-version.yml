@@ -24,6 +24,7 @@ jobs:
     name: Bump Version and Create Tag
     needs: ci
     runs-on: ubuntu-latest
+    environment: release
     steps:
       - uses: actions/checkout@v4
         with:
