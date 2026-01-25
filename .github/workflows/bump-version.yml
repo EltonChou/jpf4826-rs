@@ -29,6 +29,15 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -64,15 +73,13 @@ jobs:
 
       - name: Commit version bump and changelog
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Cargo.toml jpf4826_driver/Cargo.toml jpf4826ctl/Cargo.toml Cargo.lock CHANGELOG.md
-          git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }}"
-          git tag "v${{ steps.get_version.outputs.version }}"
+          git commit -S -m "chore(version): bump version to ${{ steps.get_version.outputs.version }}"
+          git tag -s "v${{ steps.get_version.outputs.version }}" -m "Release v${{ steps.get_version.outputs.version }}"
 
       - name: Push changes and tag
         run: |
-          git push origin master
+          git push origin ${{ github.ref_name }}
           git push origin "v${{ steps.get_version.outputs.version }}"
 
       - name: Summary
