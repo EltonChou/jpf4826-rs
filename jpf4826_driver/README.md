@@ -31,7 +31,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-jpf4826-driver = "0.1"
+jpf4826_driver = "0.1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
@@ -212,7 +212,7 @@ The driver automatically configures the serial port with JPF4826 specifications:
 
 ### Core Types
 
-- **`WorkMode`**: `Shutdown` or `MinimumSpeed` (ECO mode)
+- **`WorkMode`**: `Shutdown` (ECO, fan stops) or `MinimumSpeed` (fan maintains 20%)
 - **`PwmFrequency`**: 500, 1000, 2000, 5000, 10000, or 25000 Hz
 - **`FanStatus`**: `Normal` or `Fault`
 - **`TemperatureUnit`**: `Celsius` or `Fahrenheit`
@@ -291,13 +291,7 @@ cargo test --features test-mock test_read_temperature
 
 ### Test Coverage
 
-The library includes comprehensive tests:
-- **14 tests** - Type conversions and validation
-- **13 tests** - Protocol conversions (temperature offset, bitmaps)
-- **12 tests** - Read operations
-- **26 tests** - Write operations
-- **5 tests** - Mock controller functionality
-- **36 tests** - Documentation examples
+The library includes comprehensive tests covering type conversions, protocol conversions, read/write operations, and documentation examples.
 
 ### Using Mock Client for Testing
 
@@ -305,7 +299,7 @@ The library provides a mock client for hardware-independent testing:
 
 ```toml
 [dev-dependencies]
-jpf4826-driver = { version = "0.1", features = ["test-mock"] }
+jpf4826_driver = { version = "0.1", features = ["test-mock"] }
 ```
 
 ```rust
@@ -321,7 +315,8 @@ mod tests {
         let registers = Arc::new(Mutex::new(HashMap::new()));
         registers.lock().unwrap().insert(0x0000, 71); // 31°C (with +40 offset)
 
-        let mut client = Jpf4826Client::new_mock(registers.clone()).await;
+        // Create mock client with registers and slave address
+        let mut client = Jpf4826Client::new_mock(registers.clone(), 1).await;
 
         let temp = client.temperature().await.unwrap();
         assert_eq!(temp.value, 31);
