@@ -80,7 +80,7 @@ jobs:
       - name: Configure GPG for non-interactive signing
         run: |
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          gpgconf --kill gpg-agent
+          gpg-connect-agent reloadagent /bye
 
       - name: Commit version bump and changelog
         run: |
