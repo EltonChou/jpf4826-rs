@@ -77,6 +77,11 @@ jobs:
           git_commit_gpgsign: true
           git_tag_gpgsign: true
 
+      - name: Configure GPG for non-interactive signing
+        run: |
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+
       - name: Commit version bump and changelog
         run: |
           if [ "${{ github.event.inputs.bump }}" != "none" ]; then
