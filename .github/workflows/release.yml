@@ -64,7 +64,8 @@ jobs:
           for i in $(seq 1 $MAX_ATTEMPTS); do
             echo "Attempt $i/$MAX_ATTEMPTS: Checking availability..."
 
-            RESPONSE=$(curl -sf "https://crates.io/api/v1/crates/$PACKAGE" || echo "{}")
+            RESPONSE=$(curl -sH "User-Agent: jpf4826-rs-ci (https://github.com/EltonChou/jpf4826-rs)" \
+              "https://crates.io/api/v1/crates/$PACKAGE" || echo "{}")
 
             if echo "$RESPONSE" | jq -e ".versions[] | select(.num == \"$VERSION\")" > /dev/null 2>&1; then
               echo "✓ $PACKAGE v$VERSION is now available on crates.io"
