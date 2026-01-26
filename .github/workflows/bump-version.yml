@@ -67,16 +67,17 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
 
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          trust_level: 5
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          git_tag_gpgsign: true
-          git_config_global: true
+      # TODO: Re-enable GPG signing after fixing the signing issue
+      # - name: Import GPG key
+      #   uses: crazy-max/ghaction-import-gpg@v6
+      #   with:
+      #     gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+      #     passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      #     trust_level: 5
+      #     git_user_signingkey: true
+      #     git_commit_gpgsign: true
+      #     git_tag_gpgsign: true
+      #     git_config_global: true
 
       - name: Commit version bump and changelog
         run: |
