@@ -52,35 +52,6 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Wait for jpf4826_driver on crates.io
-        run: |
-          PACKAGE="jpf4826_driver"
-          VERSION="${{ needs.publish-driver.outputs.version }}"
-          MAX_ATTEMPTS=30
-          SLEEP_SECONDS=10
-
-          echo "Waiting for $PACKAGE v$VERSION to be available on crates.io..."
-
-          for i in $(seq 1 $MAX_ATTEMPTS); do
-            echo "Attempt $i/$MAX_ATTEMPTS: Checking availability..."
-
-            RESPONSE=$(curl -sH "User-Agent: jpf4826-rs-ci (https://github.com/EltonChou/jpf4826-rs)" \
-              "https://crates.io/api/v1/crates/$PACKAGE" || echo "{}")
-
-            if echo "$RESPONSE" | jq -e ".versions[] | select(.num == \"$VERSION\")" > /dev/null 2>&1; then
-              echo "✓ $PACKAGE v$VERSION is now available on crates.io"
-              exit 0
-            fi
-
-            if [ $i -lt $MAX_ATTEMPTS ]; then
-              echo "Version not found yet, waiting ${SLEEP_SECONDS}s..."
-              sleep $SLEEP_SECONDS
-            fi
-          done
-
-          echo "✗ Timeout: $PACKAGE v$VERSION not available after $((MAX_ATTEMPTS * SLEEP_SECONDS)) seconds"
-          exit 1
-
       - name: Publish jpf4826ctl
         run: cargo publish --package jpf4826ctl
         env:
