@@ -8,6 +8,7 @@ on:
         required: true
         type: choice
         options:
+          - none
           - patch
           - minor
           - major
@@ -46,6 +47,7 @@ jobs:
         run: cargo install cargo-edit
 
       - name: Bump version
+        if: ${{ github.event.inputs.bump != 'none' }}
         run: cargo set-version --workspace --bump ${{ github.event.inputs.bump }}
 
       - name: Get new version
@@ -56,12 +58,14 @@ jobs:
           echo "New version: $VERSION"
 
       - name: Update jpf4826ctl dependency version
+        if: ${{ github.event.inputs.bump != 'none' }}
         run: |
           VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           cd jpf4826ctl
           cargo add jpf4826_driver@$VERSION --path ../jpf4826_driver
 
       - name: Update Cargo.lock
+        if: ${{ github.event.inputs.bump != 'none' }}
         run: cargo update --workspace
 
       - name: Update CHANGELOG
@@ -74,8 +78,13 @@ jobs:
 
       - name: Commit version bump and changelog
         run: |
-          git add Cargo.toml jpf4826_driver/Cargo.toml jpf4826ctl/Cargo.toml Cargo.lock CHANGELOG.md
-          git commit -S -m "chore(version): bump version to ${{ steps.get_version.outputs.version }}"
+          if [ "${{ github.event.inputs.bump }}" != "none" ]; then
+            git add Cargo.toml jpf4826_driver/Cargo.toml jpf4826ctl/Cargo.toml Cargo.lock CHANGELOG.md
+            git commit -S -m "chore(version): bump version to ${{ steps.get_version.outputs.version }}"
+          else
+            git add CHANGELOG.md
+            git diff --cached --quiet || git commit -S -m "docs: update CHANGELOG for v${{ steps.get_version.outputs.version }}"
+          fi
           git tag -s "v${{ steps.get_version.outputs.version }}" -m "Release v${{ steps.get_version.outputs.version }}"
 
       - name: Push changes and tag
@@ -87,7 +96,7 @@ jobs:
         run: |
           echo "### Version Bump Complete! 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Bump Strategy**: ${{ github.event.inputs.bump }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bump Strategy**: ${{ github.event.inputs.bump }}${{ github.event.inputs.bump == 'none' && ' (no version change)' || '' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **New Version**: ${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Tag**: v${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
