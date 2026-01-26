@@ -81,12 +81,12 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.bump }}" != "none" ]; then
             git add Cargo.toml jpf4826_driver/Cargo.toml jpf4826ctl/Cargo.toml Cargo.lock CHANGELOG.md
-            git commit -S -m "chore(version): bump version to ${{ steps.get_version.outputs.version }}"
+            git commit -m "chore(version): bump version to ${{ steps.get_version.outputs.version }}"
           else
             git add CHANGELOG.md
-            git diff --cached --quiet || git commit -S -m "docs: update CHANGELOG for v${{ steps.get_version.outputs.version }}"
+            git diff --cached --quiet || git commit -m "docs: update CHANGELOG for v${{ steps.get_version.outputs.version }}"
           fi
-          git tag -s "v${{ steps.get_version.outputs.version }}" -m "Release v${{ steps.get_version.outputs.version }}"
+          git tag "v${{ steps.get_version.outputs.version }}" -m "Release v${{ steps.get_version.outputs.version }}"
 
       - name: Push changes and tag
         run: |
