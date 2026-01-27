@@ -19,12 +19,14 @@
 //! # }
 //! ```
 
-// Rust guideline compliant 2026-01-06
+// Rust guideline compliant 2026-01-27
 
 #[doc(inline)]
 pub use client::Jpf4826Client;
 #[doc(inline)]
 pub use error::{Jpf4826Error, Result};
+#[doc(inline)]
+pub use modbus::DEFAULT_TIMEOUT;
 #[doc(inline)]
 pub use types::*;
 

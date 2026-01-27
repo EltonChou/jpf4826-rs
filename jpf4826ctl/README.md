@@ -29,6 +29,18 @@ Specify the Modbus address of the controller.
 
 If not provided, falls back to the `JPF4826_ADDR` environment variable.
 
+### `-t`, `--timeout=TIMEOUT`
+
+Specify the timeout for each Modbus operation in seconds.
+
+**Range**: `1-300` seconds
+
+**Default**: `10` seconds
+
+If not provided, falls back to the `JPF4826_TIMEOUT` environment variable, or uses the default of 10 seconds.
+
+This timeout prevents indefinite waiting when the controller is not responding (e.g., wrong address or disconnected device).
+
 ### `--help`
 
 Display available commands and usage information.
@@ -47,11 +59,12 @@ Commands:
   help    Print this message or the help of the given subcommand(s)
 
 Options:
-  -p, --port <PORT>  Serial port (falls back to JPF4826_PORT env var) [env: JPF4826_PORT=]
-  -a, --addr <ADDR>  Modbus address (falls back to JPF4826_ADDR env var) [env: JPF4826_ADDR=]
-  -v, --verbose      Enable verbose logging (debug output)
-  -h, --help         Print help
-  -V, --version      Print version
+  -p, --port <PORT>        Serial port (falls back to JPF4826_PORT env var) [env: JPF4826_PORT=]
+  -a, --addr <ADDR>        Modbus address (falls back to JPF4826_ADDR env var) [env: JPF4826_ADDR=]
+  -v, --verbose            Enable verbose logging (debug output)
+  -t, --timeout <TIMEOUT>  Timeout for each operation in seconds (1-300) [env: JPF4826_TIMEOUT=] [default: 10]
+  -h, --help               Print help
+  -V, --version            Print version
 ```
 
 ### `--version`

@@ -3,10 +3,11 @@
 //! This module defines structured error types for all failure modes
 //! in the driver, following best practices for error handling.
 
-// Rust guideline compliant 2026-01-06
+// Rust guideline compliant 2026-01-27
 
 use std::backtrace::Backtrace;
 use std::fmt;
+use std::time::Duration;
 
 /// Result type alias for JPF4826 driver operations.
 pub type Result<T> = std::result::Result<T, Jpf4826Error>;
@@ -38,6 +39,8 @@ pub(crate) enum ErrorKind {
     InvalidAddress(u8),
     /// Manual speed percentage out of valid range (0-100).
     InvalidSpeed(u8),
+    /// Operation timed out.
+    Timeout(Duration),
 }
 
 impl Jpf4826Error {
@@ -97,6 +100,14 @@ impl Jpf4826Error {
         }
     }
 
+    /// Creates error for operation timeout.
+    pub(crate) fn timeout(duration: Duration) -> Self {
+        Self {
+            kind: ErrorKind::Timeout(duration),
+            backtrace: Backtrace::capture(),
+        }
+    }
+
     /// Returns true if error is due to Modbus communication.
     ///
     /// # Examples
@@ -126,6 +137,35 @@ impl Jpf4826Error {
     /// Returns true if error is due to invalid parameter.
     pub fn is_invalid_parameter(&self) -> bool {
         matches!(self.kind, ErrorKind::InvalidParameter(_))
+    }
+
+    /// Returns true if error is due to operation timeout.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use jpf4826_driver::{Jpf4826Client, Result};
+    /// # async fn example() -> Result<()> {
+    /// # let mut client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
+    /// match client.temperature().await {
+    ///     Err(e) if e.is_timeout() => println!("Operation timed out"),
+    ///     Err(e) => println!("Other error: {}", e),
+    ///     Ok(temp) => println!("Temperature: {}°C", temp.value),
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn is_timeout(&self) -> bool {
+        matches!(self.kind, ErrorKind::Timeout(_))
+    }
+
+    /// Returns the timeout duration if this was a timeout error.
+    pub fn timeout_duration(&self) -> Option<Duration> {
+        if let ErrorKind::Timeout(duration) = self.kind {
+            Some(duration)
+        } else {
+            None
+        }
     }
 
     /// Returns the fan index if error is due to invalid fan index.
@@ -181,6 +221,13 @@ impl fmt::Display for Jpf4826Error {
             }
             ErrorKind::InvalidSpeed(speed) => {
                 write!(f, "Manual speed {}% out of range (0-100)", speed)
+            }
+            ErrorKind::Timeout(duration) => {
+                write!(
+                    f,
+                    "Operation timed out after {:.1}s",
+                    duration.as_secs_f64()
+                )
             }
         }
     }

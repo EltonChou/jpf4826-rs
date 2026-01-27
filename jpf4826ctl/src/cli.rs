@@ -1,8 +1,9 @@
 //! Command-line argument definitions using clap.
 
-// Rust guideline compliant 2026-01-06
+// Rust guideline compliant 2026-01-27
 
 use clap::{Parser, Subcommand};
+use std::time::Duration;
 
 /// JPF4826 fan controller CLI utility.
 #[derive(Parser, Debug)]
@@ -36,6 +37,19 @@ pub struct Cli {
     /// Enable verbose logging (debug output)
     #[arg(short = 'v', long = "verbose", global = true)]
     pub verbose: bool,
+
+    /// Operation timeout in seconds (default: 10)
+    // TODO: Consider using jpf4826_driver::DEFAULT_TIMEOUT instead of hardcoded "10"
+    // to keep CLI and driver defaults synchronized.
+    #[arg(
+        short = 't',
+        long = "timeout",
+        env = "JPF4826_TIMEOUT",
+        default_value = "10",
+        value_parser = clap::value_parser!(u64).range(1..=300),
+        help = "Timeout for each operation in seconds (1-300)"
+    )]
+    pub timeout: u64,
 
     /// Command to execute
     #[command(subcommand)]
@@ -121,5 +135,10 @@ impl Cli {
         self.addr.ok_or_else(|| {
             "Modbus address not specified. Use --addr or set JPF4826_ADDR".to_string()
         })
+    }
+
+    /// Returns the timeout as a Duration.
+    pub fn get_timeout(&self) -> Duration {
+        Duration::from_secs(self.timeout)
     }
 }

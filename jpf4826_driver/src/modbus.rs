@@ -3,17 +3,25 @@
 //! This module provides the low-level Modbus-RTU protocol implementation
 //! over serial port connection.
 
-// Rust guideline compliant 2026-01-06
+// Rust guideline compliant 2026-01-27
 
 use crate::error::{Jpf4826Error, Result};
+use std::time::Duration;
 use tokio_modbus::client::Context;
 use tokio_modbus::prelude::*;
 use tokio_serial::SerialStream;
+
+/// Default timeout for Modbus operations (10 seconds).
+///
+/// This value is used when no timeout is specified during client initialization.
+/// The timeout applies to each individual Modbus read/write operation.
+pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Modbus-RTU client for JPF4826 controller.
 pub struct ModbusRtuClient {
     context: Context,
     slave_addr: std::cell::Cell<u8>,
+    timeout: Duration,
 }
 
 impl ModbusRtuClient {
@@ -67,7 +75,21 @@ impl ModbusRtuClient {
         Ok(Self {
             context,
             slave_addr: std::cell::Cell::new(slave_addr),
+            timeout: DEFAULT_TIMEOUT,
         })
+    }
+
+    /// Returns the current operation timeout.
+    pub fn timeout(&self) -> Duration {
+        self.timeout
+    }
+
+    /// Sets the timeout for Modbus operations.
+    ///
+    /// This affects all subsequent read and write operations.
+    // TODO: Consider validating that timeout is not zero to prevent immediate timeout errors.
+    pub fn set_timeout(&mut self, timeout: Duration) {
+        self.timeout = timeout;
     }
 
     /// Reads holding registers from the controller.
@@ -79,14 +101,29 @@ impl ModbusRtuClient {
     ///
     /// # Errors
     ///
-    /// Returns error if Modbus communication fails.
+    /// Returns error if:
+    /// - Modbus communication fails
+    /// - Operation times out
     pub async fn read_holding_registers(&mut self, addr: u16, count: u16) -> Result<Vec<u16>> {
-        log::debug!("Modbus READ: addr=0x{:04X}, count={}", addr, count);
+        log::debug!(
+            "Modbus READ: addr=0x{:04X}, count={}, timeout={:?}",
+            addr,
+            count,
+            self.timeout
+        );
 
-        let result = self
-            .context
-            .read_holding_registers(addr, count)
+        let operation = self.context.read_holding_registers(addr, count);
+
+        let result = tokio::time::timeout(self.timeout, operation)
             .await
+            .map_err(|_| {
+                log::error!(
+                    "Modbus READ timed out at 0x{:04X} after {:?}",
+                    addr,
+                    self.timeout
+                );
+                Jpf4826Error::timeout(self.timeout)
+            })?
             .map_err(|e| {
                 log::error!("Modbus READ failed at 0x{:04X}: {}", addr, e);
                 Jpf4826Error::modbus(format!("Failed to read registers at 0x{:04X}: {}", addr, e))
@@ -113,13 +150,29 @@ impl ModbusRtuClient {
     ///
     /// # Errors
     ///
-    /// Returns error if Modbus communication fails.
+    /// Returns error if:
+    /// - Modbus communication fails
+    /// - Operation times out
     pub async fn write_single_register(&mut self, addr: u16, value: u16) -> Result<()> {
-        log::debug!("Modbus WRITE: addr=0x{:04X}, value=0x{:04X}", addr, value);
+        log::debug!(
+            "Modbus WRITE: addr=0x{:04X}, value=0x{:04X}, timeout={:?}",
+            addr,
+            value,
+            self.timeout
+        );
 
-        self.context
-            .write_single_register(addr, value)
+        let operation = self.context.write_single_register(addr, value);
+
+        tokio::time::timeout(self.timeout, operation)
             .await
+            .map_err(|_| {
+                log::error!(
+                    "Modbus WRITE timed out at 0x{:04X} after {:?}",
+                    addr,
+                    self.timeout
+                );
+                Jpf4826Error::timeout(self.timeout)
+            })?
             .map_err(|e| {
                 log::error!("Modbus WRITE failed at 0x{:04X}: {}", addr, e);
                 Jpf4826Error::modbus(format!("Failed to write register 0x{:04X}: {}", addr, e))

@@ -3,14 +3,16 @@
 //! This module provides the main client interface for interacting with
 //! JPF4826 fan controllers via serial Modbus-RTU protocol.
 
-// Rust guideline compliant 2026-01-16
+// Rust guideline compliant 2026-01-27
 
 use crate::{
     conversions::{celsius_to_register, parse_fan_fault_bitmap, register_to_celsius},
     error::{Jpf4826Error, Result},
+    modbus::DEFAULT_TIMEOUT,
     registers::RegisterAddress,
     types::{ControllerStatus, FanInfo, PwmFrequency, Temperature, TemperatureUnit, WorkMode},
 };
+use std::time::Duration;
 
 /// JPF4826 fan controller client.
 ///
@@ -74,6 +76,8 @@ impl MockBackend {
 impl Jpf4826Client {
     /// Creates a new client connected to the specified serial port.
     ///
+    /// Uses the default timeout of 10 seconds for all operations.
+    ///
     /// # Arguments
     ///
     /// * `port` - Serial port path (e.g., "/dev/ttyUSB0", "COM3")
@@ -96,14 +100,104 @@ impl Jpf4826Client {
     /// - Serial port cannot be opened
     /// - Modbus address is out of range (1-254)
     pub async fn new(port: &str, slave_addr: u8) -> Result<Self> {
+        Self::with_timeout(port, slave_addr, DEFAULT_TIMEOUT).await
+    }
+
+    /// Creates a new client with a custom timeout.
+    ///
+    /// # Arguments
+    ///
+    /// * `port` - Serial port path (e.g., "/dev/ttyUSB0", "COM3")
+    /// * `slave_addr` - Modbus slave address (1-254)
+    /// * `timeout` - Timeout for each Modbus operation
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use jpf4826_driver::Jpf4826Client;
+    /// # use std::time::Duration;
+    /// # #[tokio::main]
+    /// # async fn main() -> jpf4826_driver::Result<()> {
+    /// // Create client with 5 second timeout
+    /// let client = Jpf4826Client::with_timeout(
+    ///     "/dev/ttyUSB0",
+    ///     1,
+    ///     Duration::from_secs(5)
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns error if:
+    /// - Serial port cannot be opened
+    /// - Modbus address is out of range (1-254)
+    pub async fn with_timeout(port: &str, slave_addr: u8, timeout: Duration) -> Result<Self> {
         if !(1..=254).contains(&slave_addr) {
             return Err(Jpf4826Error::invalid_address(slave_addr));
         }
 
-        let modbus_client = crate::modbus::ModbusRtuClient::new(port, slave_addr).await?;
+        let mut modbus_client = crate::modbus::ModbusRtuClient::new(port, slave_addr).await?;
+        modbus_client.set_timeout(timeout);
         Ok(Self {
             backend: ClientBackend::RealModbus(modbus_client),
         })
+    }
+
+    /// Sets the timeout for Modbus operations.
+    ///
+    /// This affects all subsequent read and write operations.
+    /// Has no effect on mock backend.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use jpf4826_driver::Jpf4826Client;
+    /// # use std::time::Duration;
+    /// # #[tokio::main]
+    /// # async fn main() -> jpf4826_driver::Result<()> {
+    /// # let mut client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
+    /// // Change timeout to 5 seconds
+    /// client.set_timeout(Duration::from_secs(5));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_timeout(&mut self, timeout: Duration) {
+        match &mut self.backend {
+            #[cfg(any(test, feature = "test-mock"))]
+            ClientBackend::Mock(_) => {
+                // Mock backend ignores timeout (instant operations)
+            }
+            ClientBackend::RealModbus(modbus) => modbus.set_timeout(timeout),
+        }
+    }
+
+    /// Returns the current operation timeout.
+    ///
+    /// Returns `None` for mock backend (no timeout applies).
+    // TODO: Consider returning `Duration` directly instead of `Option<Duration>`
+    // since production code always has a timeout value.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use jpf4826_driver::Jpf4826Client;
+    /// # #[tokio::main]
+    /// # async fn main() -> jpf4826_driver::Result<()> {
+    /// # let client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
+    /// if let Some(timeout) = client.timeout() {
+    ///     println!("Current timeout: {:?}", timeout);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn timeout(&self) -> Option<Duration> {
+        match &self.backend {
+            #[cfg(any(test, feature = "test-mock"))]
+            ClientBackend::Mock(_) => None,
+            ClientBackend::RealModbus(modbus) => Some(modbus.timeout()),
+        }
     }
 
     /// Creates a mock client for testing (test-only).
