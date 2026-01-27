@@ -175,9 +175,8 @@ impl Jpf4826Client {
 
     /// Returns the current operation timeout.
     ///
-    /// Returns `None` for mock backend (no timeout applies).
-    // TODO: Consider returning `Duration` directly instead of `Option<Duration>`
-    // since production code always has a timeout value.
+    /// For mock backend, returns `DEFAULT_TIMEOUT` since mock operations
+    /// do not actually use timeouts.
     ///
     /// # Examples
     ///
@@ -186,17 +185,16 @@ impl Jpf4826Client {
     /// # #[tokio::main]
     /// # async fn main() -> jpf4826_driver::Result<()> {
     /// # let client = Jpf4826Client::new("/dev/ttyUSB0", 1).await?;
-    /// if let Some(timeout) = client.timeout() {
-    ///     println!("Current timeout: {:?}", timeout);
-    /// }
+    /// let timeout = client.timeout();
+    /// println!("Current timeout: {:?}", timeout);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn timeout(&self) -> Option<Duration> {
+    pub fn timeout(&self) -> Duration {
         match &self.backend {
             #[cfg(any(test, feature = "test-mock"))]
-            ClientBackend::Mock(_) => None,
-            ClientBackend::RealModbus(modbus) => Some(modbus.timeout()),
+            ClientBackend::Mock(_) => DEFAULT_TIMEOUT,
+            ClientBackend::RealModbus(modbus) => modbus.timeout(),
         }
     }
 

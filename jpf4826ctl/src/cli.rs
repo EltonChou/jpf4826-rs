@@ -5,6 +5,9 @@
 use clap::{Parser, Subcommand};
 use std::time::Duration;
 
+/// Default timeout in seconds, must match jpf4826_driver::DEFAULT_TIMEOUT.
+const DEFAULT_TIMEOUT_SECS: &str = "10";
+
 /// JPF4826 fan controller CLI utility.
 #[derive(Parser, Debug)]
 #[command(
@@ -39,13 +42,11 @@ pub struct Cli {
     pub verbose: bool,
 
     /// Operation timeout in seconds (default: 10)
-    // TODO: Consider using jpf4826_driver::DEFAULT_TIMEOUT instead of hardcoded "10"
-    // to keep CLI and driver defaults synchronized.
     #[arg(
         short = 't',
         long = "timeout",
         env = "JPF4826_TIMEOUT",
-        default_value = "10",
+        default_value = DEFAULT_TIMEOUT_SECS,
         value_parser = clap::value_parser!(u64).range(1..=300),
         help = "Timeout for each operation in seconds (1-300)"
     )]

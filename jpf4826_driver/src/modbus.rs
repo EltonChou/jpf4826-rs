@@ -87,9 +87,11 @@ impl ModbusRtuClient {
     /// Sets the timeout for Modbus operations.
     ///
     /// This affects all subsequent read and write operations.
-    // TODO: Consider validating that timeout is not zero to prevent immediate timeout errors.
+    /// Zero-duration timeouts are ignored to prevent immediate timeout errors.
     pub fn set_timeout(&mut self, timeout: Duration) {
-        self.timeout = timeout;
+        if !timeout.is_zero() {
+            self.timeout = timeout;
+        }
     }
 
     /// Reads holding registers from the controller.
