@@ -769,7 +769,7 @@ impl Jpf4826Client {
     /// Sets temperature thresholds for automatic fan control.
     ///
     /// Fans start spinning at `low` temperature and reach 100% speed at
-    /// `high` temperature. Constraintmust be: `high` > `low`.
+    /// `high` temperature. Constraint: `high` must be greater than `low`.
     ///
     /// # Arguments
     ///
