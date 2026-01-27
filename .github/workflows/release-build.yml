@@ -1,0 +1,88 @@
+name: Release Build
+
+on:
+  workflow_call:
+    outputs:
+      artifact-pattern:
+        description: 'Pattern matching all uploaded artifacts'
+        value: ${{ jobs.build.outputs.artifact-pattern }}
+
+env:
+  CARGO_TERM_COLOR: always
+  BINARY_NAME: jpf4826ctl
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    outputs:
+      artifact-pattern: ${{ steps.set-output.outputs.artifact-pattern }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            platform: macos
+            arch: aarch64
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            platform: windows
+            arch: aarch64
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            platform: linux
+            arch: aarch64
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            platform: windows
+            arch: x86_64
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Get version from Cargo.toml
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "jpf4826ctl") | .version')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
+      - name: Build with cross
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: ${{ matrix.target }}
+          args: --locked --release --package jpf4826ctl
+
+      - name: Determine binary extension
+        id: binary
+        shell: bash
+        run: |
+          if [[ "${{ matrix.platform }}" == "windows" ]]; then
+            echo "ext=.exe" >> $GITHUB_OUTPUT
+          else
+            echo "ext=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BINARY_NAME }}_${{ steps.version.outputs.version }}_${{ matrix.platform }}_${{ matrix.arch }}
+          path: target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}${{ steps.binary.outputs.ext }}
+          retention-days: 7
+
+      - name: Set output
+        id: set-output
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        shell: bash
+        run: |
+          echo "artifact-pattern=${{ env.BINARY_NAME }}_${{ steps.version.outputs.version }}_*" >> $GITHUB_OUTPUT
