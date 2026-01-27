@@ -138,3 +138,22 @@ jobs:
           draft: false
           prerelease: false
           files: artifacts/**/*
+
+      - name: Summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Published Packages" >> $GITHUB_STEP_SUMMARY
+          echo "- [jpf4826_driver](https://crates.io/crates/jpf4826_driver)" >> $GITHUB_STEP_SUMMARY
+          echo "- [jpf4826ctl](https://crates.io/crates/jpf4826ctl)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Architecture | Archive |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------------|---------|" >> $GITHUB_STEP_SUMMARY
+          for file in artifacts/*; do
+            filename=$(basename "$file")
+            echo "| $(echo "$filename" | sed 's/.*-\([^-]*\)-\([^-]*\)\.\(tar\.gz\|zip\)$/\1/') | $(echo "$filename" | sed 's/.*-\([^-]*\)-\([^-]*\)\.\(tar\.gz\|zip\)$/\2/') | $filename |" >> $GITHUB_STEP_SUMMARY
+          done

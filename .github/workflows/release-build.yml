@@ -86,3 +86,16 @@ jobs:
         shell: bash
         run: |
           echo "artifact-pattern=${{ env.BINARY_NAME }}-${{ steps.version.outputs.version }}-*" >> $GITHUB_OUTPUT
+
+      - name: Summary
+        shell: bash
+        run: |
+          echo "## Build: ${{ matrix.target }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | ${{ steps.version.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target** | ${{ matrix.target }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Platform** | ${{ matrix.platform }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Architecture** | ${{ matrix.arch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Artifact** | ${{ env.BINARY_NAME }}-${{ steps.version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }} |" >> $GITHUB_STEP_SUMMARY
