@@ -15,7 +15,7 @@ jobs:
 
   build:
     name: Build Release Binaries
-    needs: ci
+    needs: publish-cli
     uses: ./.github/workflows/release-build.yml
 
   publish-driver:
@@ -61,7 +61,7 @@ jobs:
 
   github-release:
     name: Create GitHub Release
-    needs: [build, publish-driver, publish-cli]
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
