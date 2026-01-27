@@ -76,7 +76,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}_${{ steps.version.outputs.version }}_${{ matrix.platform }}_${{ matrix.arch }}
+          name: ${{ env.BINARY_NAME }}-${{ steps.version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}
           path: target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}${{ steps.binary.outputs.ext }}
           retention-days: 7
 
@@ -85,4 +85,4 @@ jobs:
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         shell: bash
         run: |
-          echo "artifact-pattern=${{ env.BINARY_NAME }}_${{ steps.version.outputs.version }}_*" >> $GITHUB_OUTPUT
+          echo "artifact-pattern=${{ env.BINARY_NAME }}-${{ steps.version.outputs.version }}-*" >> $GITHUB_OUTPUT

@@ -12,9 +12,11 @@ jobs:
   ci:
     name: Run CI Tests
     uses: ./.github/workflows/ci.yml
-    with:
-      upload_artifacts: true
-      artifact_name: jpf4826ctl-${{ github.ref_name }}
+
+  build:
+    name: Build Release Binaries
+    needs: ci
+    uses: ./.github/workflows/release-build.yml
 
   publish-driver:
     name: Publish jpf4826_driver to crates.io
@@ -59,7 +61,7 @@ jobs:
 
   github-release:
     name: Create GitHub Release
-    needs: [ci, publish-driver, publish-cli]
+    needs: [build, publish-driver, publish-cli]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,25 +79,26 @@ jobs:
           OUTPUT: RELEASE_NOTES.md
 
       - name: Download artifacts
-        if: needs.ci.outputs.artifacts_uploaded == 'true'
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ needs.ci.outputs.artifact_prefix }}-*
+          pattern: ${{ needs.build.outputs.artifact-pattern }}
           path: artifacts-tmp
           merge-multiple: false
 
       - name: Prepare release artifacts
-        if: needs.ci.outputs.artifacts_uploaded == 'true'
         run: |
           mkdir -p artifacts
           VERSION="${{ steps.version.outputs.version }}"
 
           # Process each platform's artifact
           for dir in artifacts-tmp/*/; do
-            platform=$(basename "$dir" | sed "s/${{ needs.ci.outputs.artifact_prefix }}-//")
+            artifact_name=$(basename "$dir")
+            # Extract platform and arch from artifact name (format: jpf4826ctl-VERSION-PLATFORM-ARCH)
+            platform=$(echo "$artifact_name" | sed 's/.*-'"$VERSION"'-\([^-]*\)-\([^-]*\)$/\1/')
+            arch=$(echo "$artifact_name" | sed 's/.*-'"$VERSION"'-\([^-]*\)-\([^-]*\)$/\2/')
 
             # Determine archive format and binary extension
-            if [[ "$platform" == "windows-latest" ]]; then
+            if [[ "$platform" == "windows" ]]; then
               archive_ext="zip"
               binary_ext=".exe"
             else
@@ -104,15 +107,15 @@ jobs:
             fi
 
             # Create temporary directory for archive contents
-            temp_dir="temp-${platform}"
+            temp_dir="temp-${platform}-${arch}"
             mkdir -p "$temp_dir"
 
             # Copy binary and README
-            cp "$dir"jpf4826ctl${binary_ext} "$temp_dir/"
+            cp "${dir}jpf4826ctl${binary_ext}" "$temp_dir/"
             cp jpf4826ctl/README.md "$temp_dir/"
 
             # Create archive with version in filename
-            archive_name="jpf4826ctl-${VERSION}-${platform}.${archive_ext}"
+            archive_name="jpf4826ctl-${VERSION}-${platform}-${arch}.${archive_ext}"
 
             if [[ "$archive_ext" == "zip" ]]; then
               (cd "$temp_dir" && zip -r "../artifacts/${archive_name}" .)
