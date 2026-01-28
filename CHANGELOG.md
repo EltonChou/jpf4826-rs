@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ci**: Set git user with --global and push with --atomic
 - **ci**: Fix git options
 - **ci**: Grant contents write permission for bump-version push
+- **ci**: Use PAT for bump-version checkout to trigger release workflow
 
 ### Refactored
 
