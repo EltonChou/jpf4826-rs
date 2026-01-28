@@ -14,15 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Correct typo in doc comment
-- **ci**: Use cargo upgrade to update dependency version
-- **ci**: Correct cargo upgrade syntax
 - Allow Cargo.lock to be committed
-- **ci**: Configure git user identity in bump-version workflow
-- **ci**: Add fetch-depth 0 to bump-version checkout
-- **ci**: Set git user with --global and push with --atomic
-- **ci**: Fix git options
-- **ci**: Grant contents write permission for bump-version push
-- **ci**: Use PAT for bump-version checkout to trigger release workflow
+
+### Documentation
+
+- Update CHANGELOG for v0.1.1 [skip ci]
 
 ### Refactored
 
