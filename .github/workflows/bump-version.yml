@@ -54,8 +54,7 @@ jobs:
         if: ${{ github.event.inputs.bump != 'none' }}
         run: |
           VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
-          cd jpf4826ctl
-          cargo add jpf4826_driver@$VERSION --path ../jpf4826_driver
+          cargo upgrade jpf4826_driver@$VERSION --package jpf4826ctl
 
       - name: Update Cargo.lock
         if: ${{ github.event.inputs.bump != 'none' }}
