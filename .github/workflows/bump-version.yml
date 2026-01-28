@@ -83,8 +83,8 @@ jobs:
 
       - name: Configure Git user
         run: |
-          git --global config user.name "${{ github.actor }}"
-          git --global config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
       - name: Commit version bump and changelog
         run: |
