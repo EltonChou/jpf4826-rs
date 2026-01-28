@@ -58,6 +58,7 @@ commit_preprocessors = [
 # regex for parsing and grouping commits
 commit_parsers = [
   { message = "^feat", group = "<!-- 0 -->Added" },
+  { message = "^fix\\(ci\\)", skip = true },
   { message = "^fix", group = "<!-- 1 -->Fixed" },
   { message = "^doc", group = "<!-- 2 -->Documentation" },
   { message = "^perf", group = "<!-- 3 -->Performance" },
@@ -68,7 +69,6 @@ commit_parsers = [
   { message = "^chore\\(deps.*\\)", skip = true },
   { message = "^chore\\(pr\\)", skip = true },
   { message = "^chore\\(pull\\)", skip = true },
-  { message = "^fix(ci)", skip = true },
   { message = "^chore|^ci", skip=true },
   { body = ".*security", group = "<!-- 8 -->Security" },
   { message = "^revert", group = "<!-- 9 -->Revert" },
