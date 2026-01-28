@@ -80,6 +80,11 @@ jobs:
       #     git_tag_gpgsign: true
       #     git_config_global: true
 
+      - name: Configure Git user
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
       - name: Commit version bump and changelog
         run: |
           if [ "${{ github.event.inputs.bump }}" != "none" ]; then
