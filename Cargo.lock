@@ -694,7 +694,7 @@ dependencies = [
 
 [[package]]
 name = "jpf4826_driver"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "log",
  "mockall",
@@ -708,7 +708,7 @@ dependencies = [
 
 [[package]]
 name = "jpf4826ctl"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.1] - 2026-01-28
 
 ### Added
 
@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Correct typo in doc comment
+- **ci**: Use cargo upgrade to update dependency version
+- **ci**: Correct cargo upgrade syntax
+- Allow Cargo.lock to be committed
+- **ci**: Configure git user identity in bump-version workflow
+- **ci**: Add fetch-depth 0 to bump-version checkout
+- **ci**: Set git user with --global and push with --atomic
+- **ci**: Fix git options
+- **ci**: Grant contents write permission for bump-version push
 
 ### Refactored
 
