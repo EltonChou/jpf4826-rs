@@ -110,7 +110,9 @@ criterion/
 .env.*.local
 
 # Serial port lock files (created by some serial libraries on Unix)
+# Note: Cargo.lock is explicitly not ignored (negated below)
 *.lock
+!Cargo.lock
 
 # Temporary files
 *.tmp
