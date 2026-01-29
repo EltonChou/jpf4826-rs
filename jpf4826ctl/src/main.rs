@@ -3,8 +3,9 @@
 //! Command-line utility for controlling JPF4826 4-channel PWM fan controllers
 //! via Modbus-RTU over serial connection.
 
-// Rust guideline compliant 2026-01-27
+// Rust guideline compliant 2026-01-29
 
+use anyhow::Context;
 use clap::Parser;
 
 mod cli;
@@ -12,12 +13,23 @@ mod commands;
 mod output;
 
 use cli::{Cli, Commands};
-use jpf4826_driver::Jpf4826Client;
+use jpf4826_driver::{Jpf4826Client, Jpf4826Error};
 
 #[tokio::main]
 async fn main() {
     if let Err(e) = run().await {
-        eprintln!("Error: {}", e);
+        let is_timeout = e.chain().any(|cause| {
+            cause
+                .downcast_ref::<Jpf4826Error>()
+                .is_some_and(|err| err.is_timeout())
+        });
+
+        if is_timeout {
+            eprintln!("Error: {e}");
+            eprintln!("Hint: Verify the serial port, Modbus address, and physical connection.");
+        } else {
+            eprintln!("Error: {e}");
+        }
         std::process::exit(1);
     }
 }
@@ -90,7 +102,7 @@ async fn run() -> anyhow::Result<()> {
     // Create client connection with timeout
     let mut client = Jpf4826Client::with_timeout(&port, addr, timeout)
         .await
-        .map_err(|e| anyhow::anyhow!("Failed to connect to controller: {}", e))?;
+        .context("Failed to connect to controller")?;
 
     log::debug!("Successfully connected to controller");
 

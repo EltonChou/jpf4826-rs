@@ -238,3 +238,48 @@ impl std::error::Error for Jpf4826Error {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_timeout_error_is_timeout() {
+        let err = Jpf4826Error::timeout(Duration::from_secs(5));
+
+        assert!(err.is_timeout());
+        assert!(!err.is_modbus());
+        assert!(!err.is_serial());
+        assert!(!err.is_invalid_parameter());
+    }
+
+    #[test]
+    fn test_timeout_error_returns_duration() {
+        let duration = Duration::from_secs(15);
+        let err = Jpf4826Error::timeout(duration);
+
+        assert_eq!(err.timeout_duration(), Some(duration));
+    }
+
+    #[test]
+    fn test_non_timeout_error_has_no_duration() {
+        let err = Jpf4826Error::invalid_address(0);
+
+        assert!(!err.is_timeout());
+        assert_eq!(err.timeout_duration(), None);
+    }
+
+    #[test]
+    fn test_timeout_error_display_whole_seconds() {
+        let err = Jpf4826Error::timeout(Duration::from_secs(10));
+
+        assert_eq!(format!("{err}"), "Operation timed out after 10.0s");
+    }
+
+    #[test]
+    fn test_timeout_error_display_fractional_seconds() {
+        let err = Jpf4826Error::timeout(Duration::from_millis(2500));
+
+        assert_eq!(format!("{err}"), "Operation timed out after 2.5s");
+    }
+}
